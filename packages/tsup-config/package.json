@@ -1,0 +1,13 @@
+{
+  "name": "@food-trek/tsup-config",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "exports": {
+    ".": {
+      "import": "./tsup.config.js",
+      "require": "./tsup.config.js"
+    }
+  }
+}
