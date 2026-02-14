@@ -3,7 +3,6 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
 import { Button, useColorScheme } from "@mui/material";
-import type { Example } from "@food-trek/schemas";
 import baseApi from "./api/baseApi";
 import { useMutation } from "@tanstack/react-query";
 import { useLoading } from "./contexts/LoadingContext";
@@ -17,11 +16,7 @@ function App() {
     mutationKey: ["example"],
     mutationFn: async () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
-      return (
-        await baseApi.post<Example>("/example", {
-          title: "Example Title",
-        } satisfies Example)
-      ).data;
+      return (await baseApi.get<string>("")).data;
     },
   });
 
