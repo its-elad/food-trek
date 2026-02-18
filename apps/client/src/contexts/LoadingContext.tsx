@@ -34,8 +34,9 @@ export const LoadingProvider = ({
       <Backdrop
         sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={loading}
+        aria-busy={loading}
       >
-        <CircularProgress size={100} />
+        <CircularProgress size={100} role="progressbar" aria-label="Loading" />
       </Backdrop>
     </LoadingContext.Provider>
   );

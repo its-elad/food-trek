@@ -1,18 +1,29 @@
 import {
-  MutationCache,
   QueryClient,
   QueryClientProvider,
+  useIsMutating,
 } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLoading } from "./LoadingContext";
+
+const LoadingSyncComponent = ({ children }: { children: React.ReactNode }) => {
+  const { setLoading } = useLoading();
+  const isMutating = useIsMutating({
+    predicate: (mutation) => !mutation.meta?.disableLoadingDefault,
+  });
+
+  useEffect(() => {
+    setLoading(isMutating > 0);
+  }, [isMutating, setLoading]);
+
+  return children;
+};
 
 export const QueryClientWrapper = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
-  const { setLoading } = useLoading();
-
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -21,18 +32,12 @@ export const QueryClientWrapper = ({
             staleTime: Infinity,
           },
         },
-        mutationCache: new MutationCache({
-          onMutate: (_vars, mutation) => {
-            !mutation.meta?.disableLoadingDefault && setLoading(true);
-          },
-          onSettled: (_data, _error, _vars, _mutationRes, mutation) => {
-            !mutation.meta?.disableLoadingDefault && setLoading(false);
-          },
-        }),
       })
   );
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <LoadingSyncComponent>{children}</LoadingSyncComponent>
+    </QueryClientProvider>
   );
 };
