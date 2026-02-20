@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 // withCredentials ensures the browser sends httpOnly cookies on every request
 const baseApi = axios.create({ baseURL: API_BASE_URL, withCredentials: true });
@@ -18,16 +18,16 @@ baseApi.interceptors.response.use(
         await axios.post(
           `${API_BASE_URL}/auth/refresh`,
           {},
-          { withCredentials: true },
+          { withCredentials: true }
         );
         // New accessToken cookie is now set – retry the original request
         return baseApi(original);
       } catch (_err) {
-        window.location.href = '/login';
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);
-  },
+  }
 );
 
-export default baseApi;
+export { baseApi };

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -11,38 +11,47 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.js";
 import { GoogleLogin } from "@react-oauth/google";
-import type { RegisterReq } from "@food-trek/schemas";
+import { registerSchema } from "@food-trek/schemas";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const registerFormSchema = registerSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type RegisterFormData = z.infer<typeof registerFormSchema>;
 
 export default function RegisterPage() {
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  const [registerForm, setRegisterForm] = useState<RegisterReq>({
-    username: "",
-    email: "",
-    password: "",
+  const {
+    register: field,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerFormSchema),
   });
-  const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (registerForm.password !== confirm) {
-      return setError("Passwords do not match");
-    }
-    setLoading(true);
+  const [serverError, setServerError] = useState("");
+
+  const onSubmit = async ({
+    confirmPassword: _,
+    ...data
+  }: RegisterFormData) => {
+    setServerError("");
     try {
-      await register(registerForm);
+      await register(data);
       navigate("/");
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ?? "Registration failed";
-      setError(msg);
-    } finally {
-      setLoading(false);
+      setServerError(msg);
     }
   };
 
@@ -54,7 +63,7 @@ export default function RegisterPage() {
       await loginWithGoogle(credentialResponse.credential);
       navigate("/");
     } catch {
-      setError("Google sign-in failed");
+      setServerError("Google sign-in failed");
     }
   };
 
@@ -71,7 +80,7 @@ export default function RegisterPage() {
     >
       <Box
         component="form"
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         sx={{
           width: "100%",
           maxWidth: 400,
@@ -88,15 +97,13 @@ export default function RegisterPage() {
           Create Account
         </Typography>
 
-        {error && <Alert severity="error">{error}</Alert>}
+        {serverError && <Alert severity="error">{serverError}</Alert>}
 
         <TextField
           label="Username"
-          value={registerForm.username}
-          onChange={(e) =>
-            setRegisterForm((prev) => ({ ...prev, username: e.target.value }))
-          }
-          required
+          {...field("username")}
+          error={!!errors.username}
+          helperText={errors.username?.message}
           autoFocus
           autoComplete="username"
         />
@@ -104,31 +111,27 @@ export default function RegisterPage() {
         <TextField
           label="Email"
           type="email"
-          value={registerForm.email}
-          onChange={(e) =>
-            setRegisterForm((prev) => ({ ...prev, email: e.target.value }))
-          }
-          required
+          {...field("email")}
+          error={!!errors.email}
+          helperText={errors.email?.message}
           autoComplete="email"
         />
 
         <TextField
           label="Password"
           type="password"
-          value={registerForm.password}
-          onChange={(e) =>
-            setRegisterForm((prev) => ({ ...prev, password: e.target.value }))
-          }
-          required
+          {...field("password")}
+          error={!!errors.password}
+          helperText={errors.password?.message}
           autoComplete="new-password"
         />
 
         <TextField
           label="Confirm Password"
           type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          required
+          {...field("confirmPassword")}
+          error={!!errors.confirmPassword}
+          helperText={errors.confirmPassword?.message}
           autoComplete="new-password"
         />
 
@@ -136,8 +139,10 @@ export default function RegisterPage() {
           type="submit"
           variant="contained"
           size="large"
-          disabled={loading}
-          startIcon={loading && <CircularProgress size={18} color="inherit" />}
+          disabled={isSubmitting}
+          startIcon={
+            isSubmitting && <CircularProgress size={18} color="inherit" />
+          }
         >
           Register
         </Button>
@@ -146,7 +151,7 @@ export default function RegisterPage() {
 
         <GoogleLogin
           onSuccess={handleGoogleSuccess}
-          onError={() => setError("Google sign-in failed")}
+          onError={() => setServerError("Google sign-in failed")}
           auto_select={false}
           useOneTap={false}
         />

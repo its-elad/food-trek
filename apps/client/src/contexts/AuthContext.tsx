@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useCallback, type ReactNode } from "react";
 import {
   loginUser,
   registerUser,
@@ -15,64 +8,75 @@ import {
 } from "../api/authApi.js";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import type { LoginReq, RegisterReq, UserInfo } from "@food-trek/schemas";
-import { set } from "zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 
 interface AuthContextValue {
   user: UserInfo | null;
   isGetUserLoading: boolean;
-  login: (data: LoginReq) => Promise<void>;
-  register: (data: RegisterReq) => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
-  logout: () => Promise<void>;
+  login: (data: LoginReq) => unknown;
+  register: (data: RegisterReq) => unknown;
+  loginWithGoogle: (credential: string) => unknown;
+  logout: () => unknown;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const [isGetUserLoading, setIsGetUserLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const getUserQuery = useQuery({
+    queryKey: getUserInfo().key,
+    queryFn: getUserInfo().fn,
+    retry(_failureCount, error) {
+      return error instanceof AxiosError && error.response?.status !== 401;
+    },
+  });
 
-  useEffect(() => {
-    setIsGetUserLoading(true);
-    getUserInfo()
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setIsGetUserLoading(false));
-  }, []);
+  const loginMutation = useMutation({
+    mutationKey: loginUser().key,
+    mutationFn: loginUser().fn,
+    meta: { disableLoadingDefault: true },
+    onSuccess(userData) {
+      queryClient.setQueryData(getUserInfo().key, userData);
+    },
+  });
 
-  const login = useCallback(async (data: LoginReq) => {
-    const userData = await loginUser(data);
-    setUser(userData);
-  }, []);
+  const registerMutation = useMutation({
+    mutationKey: registerUser().key,
+    mutationFn: registerUser().fn,
+    meta: { disableLoadingDefault: true },
+    onSuccess(userData) {
+      queryClient.setQueryData(getUserInfo().key, userData);
+    },
+  });
 
-  const register = useCallback(async (data: RegisterReq) => {
-    const userData = await registerUser(data);
-    setUser(userData);
-  }, []);
-
-  const loginWithGoogle = useCallback(async (credential: string) => {
-    const userData = await googleLogin(credential);
-    setUser(userData);
-  }, []);
+  const loginWithGoogleMutation = useMutation({
+    mutationKey: googleLogin().key,
+    mutationFn: googleLogin().fn,
+    meta: { disableLoadingDefault: true },
+    onSuccess(userData) {
+      queryClient.setQueryData(getUserInfo().key, userData);
+    },
+  });
 
   const logout = useCallback(async () => {
     try {
-      await logoutUser();
+      await logoutUser().fn();
     } catch {
       // best-effort
     }
-    setUser(null);
+    queryClient.setQueryData(getUserInfo().key, null);
   }, []);
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ""}>
       <AuthContext.Provider
         value={{
-          user,
-          isGetUserLoading,
-          login,
-          register,
-          loginWithGoogle,
+          user: getUserQuery.data ?? null,
+          isGetUserLoading: getUserQuery.isLoading,
+          login: loginMutation.mutateAsync,
+          register: registerMutation.mutateAsync,
+          loginWithGoogle: loginWithGoogleMutation.mutateAsync,
           logout,
         }}
       >

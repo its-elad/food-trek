@@ -1,33 +1,42 @@
 import axios from "axios";
 import type { LoginReq, RegisterReq, UserInfo } from "@food-trek/schemas";
+import { baseApi } from "./baseApi";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-// All auth requests must include credentials so cookies are sent/received
-const authApi = axios.create({
-  baseURL: `${API_BASE_URL}/auth`,
-  withCredentials: true,
+export const getUserInfo = () => ({
+  fn: () =>
+    axios
+      .get<UserInfo>(`${API_BASE_URL}/auth/user`, { withCredentials: true })
+      .then((r) => r.data),
+  key: ["auth", "user"] as const,
 });
 
-/** Register – server sets accessToken + refreshToken cookies */
-export const registerUser = (data: RegisterReq) =>
-  authApi.post<UserInfo>("/register", data).then((r) => r.data);
+export const registerUser = () => ({
+  fn: (data: RegisterReq) =>
+    baseApi.post<UserInfo>("/auth/register", data).then((r) => r.data),
+  key: ["auth", "register"] as const,
+});
 
-/** Login – server sets accessToken + refreshToken cookies */
-export const loginUser = (data: LoginReq) =>
-  authApi.post<UserInfo>("/login", data).then((r) => r.data);
+export const loginUser = () => ({
+  fn: (data: LoginReq) =>
+    baseApi.post<UserInfo>("/auth/login", data).then((r) => r.data),
+  key: ["auth", "login"] as const,
+});
 
-/** Refresh – refreshToken cookie is sent automatically, new cookies are set */
-export const refreshSession = () =>
-  authApi.post<UserInfo>("/refresh").then((r) => r.data);
+export const refreshSession = () => ({
+  fn: () => baseApi.post<UserInfo>("/auth/refresh").then((r) => r.data),
+  key: ["auth", "refresh"] as const,
+});
 
-/** Logout – clears both cookies on the server */
-export const logoutUser = () => authApi.post("/logout");
+export const logoutUser = () => ({
+  fn: () => baseApi.post("/auth/logout").then(() => null),
+  key: ["auth", "logout"] as const,
+});
 
-/** Google – credential JWT from GIS; server sets cookies */
-export const googleLogin = (credential: string) =>
-  authApi.post<UserInfo>("/google", { credential }).then((r) => r.data);
-
-/** Fetch the currently authenticated user from the accessToken cookie */
-export const getUserInfo = () => authApi.get<UserInfo>("/user").then((r) => r.data);
+export const googleLogin = () => ({
+  fn: (credential: string) =>
+    baseApi.post<UserInfo>("/auth/google", { credential }).then((r) => r.data),
+  key: ["auth", "google"] as const,
+});
