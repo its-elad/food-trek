@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -7,6 +7,8 @@ import {
   Typography,
   Alert,
   CircularProgress,
+  Avatar,
+  IconButton,
 } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.js";
@@ -15,6 +17,7 @@ import { registerSchema } from "@food-trek/schemas";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { uploadFile } from "../api/filesApi.js";
 
 const registerFormSchema = registerSchema
   .extend({ confirmPassword: z.string() })
@@ -29,6 +32,10 @@ export default function RegisterPage() {
   const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
+  const [imgFile, setImgFile] = useState<File | null>(null);
+  const [serverError, setServerError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const {
     register: field,
     handleSubmit,
@@ -37,15 +44,18 @@ export default function RegisterPage() {
     resolver: zodResolver(registerFormSchema),
   });
 
-  const [serverError, setServerError] = useState("");
-
   const onSubmit = async ({
     confirmPassword: _,
     ...data
   }: RegisterFormData) => {
     setServerError("");
     try {
-      await register(data);
+      if (imgFile) {
+        const { url: imgUrl } = await uploadFile.fn(imgFile);
+        await register({ ...data, imgUrl });
+      } else {
+        await register(data);
+      }
       navigate("/");
     } catch (err: unknown) {
       const msg =
@@ -98,6 +108,34 @@ export default function RegisterPage() {
         </Typography>
 
         {serverError && <Alert severity="error">{serverError}</Alert>}
+
+        <IconButton
+          onClick={() =>
+            !!fileInputRef.current?.click
+              ? fileInputRef.current?.click()
+              : undefined
+          }
+          size="small"
+          sx={{ mx: "auto" }}
+        >
+          <input
+            accept="image/*"
+            hidden
+            id="avatar-file-input"
+            type="file"
+            ref={fileInputRef}
+            onChange={(event) => {
+              setImgFile(event.target.files?.[0] ?? null);
+            }}
+          />
+          <Avatar
+            src={imgFile ? URL.createObjectURL(imgFile) : undefined}
+            style={{
+              width: 100,
+              height: 100,
+            }}
+          />
+        </IconButton>
 
         <TextField
           label="Username"

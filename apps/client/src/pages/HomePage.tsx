@@ -16,9 +16,7 @@ export default function HomePage() {
         gap: 2,
       }}
     >
-      {user?.profileImage && (
-        <Avatar src={user.profileImage} sx={{ width: 72, height: 72 }} />
-      )}
+      <Avatar src={user?.imgUrl ?? undefined} sx={{ width: 100, height: 100 }} />
       <Typography variant="h4" fontWeight={700}>
         Welcome, {user?.username ?? 'User'}!
       </Typography>

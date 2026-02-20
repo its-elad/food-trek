@@ -33,8 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const loginMutation = useMutation({
-    mutationKey: loginUser().key,
-    mutationFn: loginUser().fn,
+    mutationKey: loginUser.key,
+    mutationFn: loginUser.fn,
     meta: { disableLoadingDefault: true },
     onSuccess(userData) {
       queryClient.setQueryData(getUserInfo().key, userData);
@@ -42,8 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const registerMutation = useMutation({
-    mutationKey: registerUser().key,
-    mutationFn: registerUser().fn,
+    mutationKey: registerUser.key,
+    mutationFn: registerUser.fn,
     meta: { disableLoadingDefault: true },
     onSuccess(userData) {
       queryClient.setQueryData(getUserInfo().key, userData);
@@ -51,8 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const loginWithGoogleMutation = useMutation({
-    mutationKey: googleLogin().key,
-    mutationFn: googleLogin().fn,
+    mutationKey: googleLogin.key,
+    mutationFn: googleLogin.fn,
     meta: { disableLoadingDefault: true },
     onSuccess(userData) {
       queryClient.setQueryData(getUserInfo().key, userData);
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await logoutUser().fn();
+      await logoutUser.fn();
     } catch {
       // best-effort
     }

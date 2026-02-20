@@ -1,15 +1,6 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Schema } from "mongoose";
 
-export interface IUser extends Document {
-  username: string;
-  email: string;
-  password?: string;
-  googleId?: string;
-  profileImage?: string;
-  refreshTokens: string[];
-}
-
-const userSchema = new Schema<IUser>({
+const userSchema = new Schema({
   username: {
     type: String,
     required: true,
@@ -32,7 +23,7 @@ const userSchema = new Schema<IUser>({
     sparse: true,
     unique: true,
   },
-  profileImage: {
+  imgUrl: {
     type: String,
   },
   refreshTokens: {
@@ -41,4 +32,4 @@ const userSchema = new Schema<IUser>({
   },
 });
 
-export default mongoose.model<IUser>('User', userSchema);
+export const User = mongoose.model("User", userSchema);

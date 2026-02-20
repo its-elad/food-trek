@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
-import User from "../models/user.model.js";
+import { User } from "../models/user.model.js";
 import { loginSchema, registerSchema, UserInfo } from "@food-trek/schemas";
 import { env } from "../env.js";
 
@@ -55,7 +55,7 @@ export const register = async (req: Request, res: Response) => {
   if (parsedBody.success === false) {
     return sendError(res, 400, "username, email, and password are required");
   }
-  const { username, email, password } = parsedBody.data;
+  const { username, email, password, imgUrl } = parsedBody.data;
 
   try {
     const existing = await User.findOne({ $or: [{ email }, { username }] });
@@ -68,6 +68,7 @@ export const register = async (req: Request, res: Response) => {
       username,
       email,
       password: hashedPassword,
+      imgUrl,
       refreshTokens: [],
     });
 
@@ -80,7 +81,7 @@ export const register = async (req: Request, res: Response) => {
       _id: user._id.toString(),
       username: user.username,
       email: user.email,
-      profileImage: user.profileImage,
+      imgUrl: user.imgUrl,
     } satisfies UserInfo);
   } catch (err) {
     console.error("register error", err);
@@ -120,7 +121,7 @@ export const login = async (req: Request, res: Response) => {
       _id: user._id.toString(),
       username: user.username,
       email: user.email,
-      profileImage: user.profileImage,
+      imgUrl: user.imgUrl,
     } satisfies UserInfo);
   } catch (err) {
     console.error("login error", err);
@@ -166,7 +167,7 @@ export const refresh = async (req: Request, res: Response) => {
       _id: user._id.toString(),
       username: user.username,
       email: user.email,
-      profileImage: user.profileImage,
+      imgUrl: user.imgUrl,
     } satisfies UserInfo);
   } catch (_err) {
     sendError(res, 401, "Invalid or expired refresh token");
@@ -219,7 +220,7 @@ export const getUser = async (req: Request, res: Response) => {
       _id: user._id.toString(),
       username: user.username,
       email: user.email,
-      profileImage: user.profileImage,
+      imgUrl: user.imgUrl,
     } satisfies UserInfo);
   } catch (_err) {
     sendError(res, 401, "Invalid or expired token");
@@ -263,12 +264,12 @@ export const googleAuth = async (req: Request, res: Response) => {
         username: uniqueUsername,
         email,
         googleId,
-        profileImage: picture,
+        imgUrl: picture,
       });
     } else if (!user.googleId) {
       // Existing email-based account – link Google
       user.googleId = googleId;
-      if (picture && !user.profileImage) user.profileImage = picture;
+      if (picture && !user.imgUrl) user.imgUrl = picture;
       await user.save();
     }
 
@@ -281,7 +282,7 @@ export const googleAuth = async (req: Request, res: Response) => {
       _id: user._id.toString(),
       username: user.username,
       email: user.email,
-      profileImage: user.profileImage,
+      imgUrl: user.imgUrl,
     } satisfies UserInfo);
   } catch (err) {
     console.error("google auth error", err);

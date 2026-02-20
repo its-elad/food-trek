@@ -13,30 +13,30 @@ export const getUserInfo = () => ({
   key: ["auth", "user"] as const,
 });
 
-export const registerUser = () => ({
+export const registerUser = {
   fn: (data: RegisterReq) =>
     baseApi.post<UserInfo>("/auth/register", data).then((r) => r.data),
   key: ["auth", "register"] as const,
-});
+};
 
-export const loginUser = () => ({
+export const loginUser = {
   fn: (data: LoginReq) =>
     baseApi.post<UserInfo>("/auth/login", data).then((r) => r.data),
   key: ["auth", "login"] as const,
-});
+};
 
-export const refreshSession = () => ({
+export const refreshSession = {
   fn: () => baseApi.post<UserInfo>("/auth/refresh").then((r) => r.data),
   key: ["auth", "refresh"] as const,
-});
+};
 
-export const logoutUser = () => ({
+export const logoutUser = {
   fn: () => baseApi.post("/auth/logout").then(() => null),
   key: ["auth", "logout"] as const,
-});
+};
 
-export const googleLogin = () => ({
+export const googleLogin = {
   fn: (credential: string) =>
     baseApi.post<UserInfo>("/auth/google", { credential }).then((r) => r.data),
   key: ["auth", "google"] as const,
-});
+};
