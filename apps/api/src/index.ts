@@ -11,7 +11,7 @@ import { filesRouter } from "./routes/files.router.js";
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = env.PORT;
 
 app.use(
   cors({

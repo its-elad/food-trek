@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { env } from '../env.js';
 
 export interface AuthRequest extends Request {
   user?: { _id: string };
@@ -16,7 +17,7 @@ export const authenticate = (
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const secret = process.env.JWT_SECRET!;
+  const secret = env.JWT_SECRET;
 
   try {
     const decoded = jwt.verify(token, secret) as unknown as { _id: string };
