@@ -1,23 +1,15 @@
 import { createContext, useContext, useCallback, type ReactNode } from "react";
-import {
-  loginUser,
-  registerUser,
-  logoutUser,
-  googleLogin,
-  getUserInfo,
-} from "../api/authApi.js";
+import { logoutUser, getUserInfo } from "../api/authApi.js";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import type { LoginReq, RegisterReq, UserInfo } from "@food-trek/schemas";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { UserInfo } from "@food-trek/schemas";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 
 interface AuthContextValue {
   user: UserInfo | null;
   isGetUserLoading: boolean;
-  login: (data: LoginReq) => unknown;
-  register: (data: RegisterReq) => unknown;
-  loginWithGoogle: (credential: string) => unknown;
-  logout: () => unknown;
+  setUser: (userData: UserInfo | null) => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -32,32 +24,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const loginMutation = useMutation({
-    mutationKey: loginUser.key,
-    mutationFn: loginUser.fn,
-    meta: { disableLoadingDefault: true },
-    onSuccess(userData) {
+  const setUser = useCallback(
+    (userData: UserInfo | null) => {
       queryClient.setQueryData(getUserInfo().key, userData);
     },
-  });
-
-  const registerMutation = useMutation({
-    mutationKey: registerUser.key,
-    mutationFn: registerUser.fn,
-    meta: { disableLoadingDefault: true },
-    onSuccess(userData) {
-      queryClient.setQueryData(getUserInfo().key, userData);
-    },
-  });
-
-  const loginWithGoogleMutation = useMutation({
-    mutationKey: googleLogin.key,
-    mutationFn: googleLogin.fn,
-    meta: { disableLoadingDefault: true },
-    onSuccess(userData) {
-      queryClient.setQueryData(getUserInfo().key, userData);
-    },
-  });
+    [queryClient]
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -65,8 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // best-effort
     }
-    queryClient.setQueryData(getUserInfo().key, null);
-  }, []);
+    setUser(null);
+  }, [setUser]);
 
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ""}>
@@ -74,9 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         value={{
           user: getUserQuery.data ?? null,
           isGetUserLoading: getUserQuery.isLoading,
-          login: loginMutation.mutateAsync,
-          register: registerMutation.mutateAsync,
-          loginWithGoogle: loginWithGoogleMutation.mutateAsync,
+          setUser,
           logout,
         }}
       >

@@ -15,10 +15,30 @@ import { loginSchema, type LoginReq } from "@food-trek/schemas";
 import { AxiosError } from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { googleLogin, loginUser } from "../api/authApi.js";
 
 export default function LoginPage() {
-  const { login, loginWithGoogle } = useAuth();
+  const { setUser } = useAuth();
   const navigate = useNavigate();
+
+  const loginMutation = useMutation({
+    mutationKey: loginUser.key,
+    mutationFn: loginUser.fn,
+    meta: { disableLoadingDefault: true },
+    onSuccess(userData) {
+      setUser(userData);
+    },
+  });
+
+  const loginWithGoogleMutation = useMutation({
+    mutationKey: googleLogin.key,
+    mutationFn: googleLogin.fn,
+    meta: { disableLoadingDefault: true },
+    onSuccess(userData) {
+      setUser(userData);
+    },
+  });
 
   const {
     register,
@@ -33,7 +53,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginReq) => {
     setServerError("");
     try {
-      await login(data);
+      await loginMutation.mutateAsync(data);
       navigate("/");
     } catch (err: unknown) {
       setServerError(
@@ -48,7 +68,7 @@ export default function LoginPage() {
   }) => {
     if (!credentialResponse.credential) return;
     try {
-      await loginWithGoogle(credentialResponse.credential);
+      await loginWithGoogleMutation.mutateAsync(credentialResponse.credential);
       navigate("/");
     } catch {
       setServerError("Google sign-in failed");
@@ -110,7 +130,9 @@ export default function LoginPage() {
           variant="contained"
           size="large"
           disabled={isSubmitting}
-          startIcon={isSubmitting && <CircularProgress size={18} color="inherit" />}
+          startIcon={
+            isSubmitting && <CircularProgress size={18} color="inherit" />
+          }
         >
           Sign In
         </Button>

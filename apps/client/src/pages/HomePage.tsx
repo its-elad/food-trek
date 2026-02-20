@@ -20,6 +20,9 @@ export default function HomePage() {
       <Typography variant="h4" fontWeight={700}>
         Welcome, {user?.username ?? 'User'}!
       </Typography>
+      <Button variant="outlined" color="primary" href="/user">
+        User Page
+      </Button>
       <Typography color="text.secondary">{user?.email}</Typography>
       <Button variant="outlined" color="error" onClick={logout} sx={{ mt: 2 }}>
         Sign Out

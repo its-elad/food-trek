@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Button,
@@ -7,17 +7,17 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Avatar,
-  IconButton,
 } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.js";
 import { GoogleLogin } from "@react-oauth/google";
-import { registerSchema } from "@food-trek/schemas";
+import { registerSchema, type UserInfo } from "@food-trek/schemas";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { uploadFile } from "../api/filesApi.js";
+import { UploadUserAvatar } from "../components/UploadUserAvatar.js";
+import { googleLogin, registerUser } from "../api/authApi.js";
 
 const registerFormSchema = registerSchema
   .extend({ confirmPassword: z.string() })
@@ -29,12 +29,11 @@ const registerFormSchema = registerSchema
 type RegisterFormData = z.infer<typeof registerFormSchema>;
 
 export default function RegisterPage() {
-  const { register, loginWithGoogle } = useAuth();
+  const { setUser } = useAuth();
   const navigate = useNavigate();
 
   const [imgFile, setImgFile] = useState<File | null>(null);
   const [serverError, setServerError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register: field,
@@ -50,12 +49,14 @@ export default function RegisterPage() {
   }: RegisterFormData) => {
     setServerError("");
     try {
+      let user: UserInfo;
       if (imgFile) {
         const { url: imgUrl } = await uploadFile.fn(imgFile);
-        await register({ ...data, imgUrl });
+        user = await registerUser.fn({ ...data, imgUrl });
       } else {
-        await register(data);
+        user = await registerUser.fn(data);
       }
+      if (user) setUser(user);
       navigate("/");
     } catch (err: unknown) {
       const msg =
@@ -70,7 +71,8 @@ export default function RegisterPage() {
   }) => {
     if (!credentialResponse.credential) return;
     try {
-      await loginWithGoogle(credentialResponse.credential);
+      const user = await googleLogin.fn(credentialResponse.credential);
+      setUser(user);
       navigate("/");
     } catch {
       setServerError("Google sign-in failed");
@@ -109,33 +111,11 @@ export default function RegisterPage() {
 
         {serverError && <Alert severity="error">{serverError}</Alert>}
 
-        <IconButton
-          onClick={() =>
-            !!fileInputRef.current?.click
-              ? fileInputRef.current?.click()
-              : undefined
-          }
-          size="small"
-          sx={{ mx: "auto" }}
-        >
-          <input
-            accept="image/*"
-            hidden
-            id="avatar-file-input"
-            type="file"
-            ref={fileInputRef}
-            onChange={(event) => {
-              setImgFile(event.target.files?.[0] ?? null);
-            }}
-          />
-          <Avatar
-            src={imgFile ? URL.createObjectURL(imgFile) : undefined}
-            style={{
-              width: 100,
-              height: 100,
-            }}
-          />
-        </IconButton>
+        <UploadUserAvatar
+          img={imgFile}
+          onClick={setImgFile}
+          isEditMode={true}
+        />
 
         <TextField
           label="Username"

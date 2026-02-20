@@ -3,14 +3,20 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { User } from "../models/user.model.js";
-import { loginSchema, registerSchema, UserInfo } from "@food-trek/schemas";
+import {
+  loginSchema,
+  registerSchema,
+  updateUserSchema,
+  UserInfo,
+} from "@food-trek/schemas";
+import { AuthRequest } from "../middleware/auth.middleware.js";
 import { env } from "../env.js";
 
 const sendError = (res: Response, code: number, message: string) =>
   res.status(code).json({ message });
 
-const ACCESS_MAX_AGE = 3600 * 1000;
-const REFRESH_MAX_AGE = 604800 * 1000;
+const ACCESS_MAX_AGE = 24 * 60 * 60 * 1000; // 1 day
+const REFRESH_MAX_AGE = 2 * 24 * 60 * 60 * 1000; // 2 days
 
 const COOKIE_BASE = {
   httpOnly: true,
@@ -287,6 +293,52 @@ export const googleAuth = async (req: Request, res: Response) => {
   } catch (err) {
     console.error("google auth error", err);
     sendError(res, 401, "Google authentication failed");
+  }
+};
+
+export const updateUser = async (req: AuthRequest, res: Response) => {
+  const userId = req.user?._id;
+  if (!userId) return sendError(res, 401, "Not authenticated");
+
+  const parsed = updateUserSchema.safeParse(req.body);
+  if (!parsed.success) return sendError(res, 400, "Invalid data");
+
+  const { username, imgUrl } = parsed.data;
+  if (username === undefined && imgUrl === undefined) {
+    return sendError(
+      res,
+      400,
+      "At least one field (username or imgUrl) must be provided"
+    );
+  }
+
+  try {
+    if (username) {
+      const existing = await User.findOne({
+        username,
+        _id: { $ne: userId },
+      });
+      if (existing) return sendError(res, 409, "Username already in use");
+    }
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        ...(!!username && { username }),
+        ...(!!imgUrl && { imgUrl }),
+      },
+      { new: true }
+    );
+    if (!user) return sendError(res, 404, "User not found");
+
+    res.json({
+      _id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      imgUrl: user.imgUrl,
+    } satisfies UserInfo);
+  } catch (err) {
+    console.error("update user error", err);
+    sendError(res, 500, "Internal server error");
   }
 };
 

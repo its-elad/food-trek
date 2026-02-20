@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.js';
 import RegisterPage from './pages/RegisterPage.js';
 import HomePage from './pages/HomePage.js';
+import UserPage from './pages/UserPage.js';
 import ProtectedRoute from './pages/ProtectedRoute.js';
 
 function App() {
@@ -14,6 +15,14 @@ function App() {
         element={
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user"
+        element={
+          <ProtectedRoute>
+            <UserPage />
           </ProtectedRoute>
         }
       />

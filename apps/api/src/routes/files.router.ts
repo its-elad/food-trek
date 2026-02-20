@@ -8,10 +8,10 @@ const filesRouter = express.Router();
 fs.mkdirSync("public", { recursive: true });
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: function (_req, _file, cb) {
     cb(null, "public/");
   },
-  filename: function (req, file, cb) {
+  filename: function (_req, file, cb) {
     const ext = file.originalname
       .split(".")
       .filter(Boolean) // removes empty extensions (e.g. `filename...txt`)
@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + "." + ext);
   },
 });
-const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
+const fileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {

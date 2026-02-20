@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { LoginReq, RegisterReq, UserInfo } from "@food-trek/schemas";
+import type { LoginReq, RegisterReq, UpdateUserReq, UserInfo } from "@food-trek/schemas";
 import { baseApi } from "./baseApi";
 
 const API_BASE_URL =
@@ -39,4 +39,10 @@ export const googleLogin = {
   fn: (credential: string) =>
     baseApi.post<UserInfo>("/auth/google", { credential }).then((r) => r.data),
   key: ["auth", "google"] as const,
+};
+
+export const updateUser = {
+  fn: (data: UpdateUserReq) =>
+    baseApi.patch<UserInfo>("/auth/user", data).then((r) => r.data),
+  key: ["auth", "updateUser"] as const,
 };

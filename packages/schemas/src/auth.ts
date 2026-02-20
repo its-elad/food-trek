@@ -25,3 +25,8 @@ export const registerSchema = userInfoSchema
     password: passwordSchema,
   });
 export type RegisterReq = z.infer<typeof registerSchema>;
+
+export const updateUserSchema = userInfoSchema
+  .pick({ username: true, imgUrl: true })
+  .partial();
+export type UpdateUserReq = z.infer<typeof updateUserSchema>;

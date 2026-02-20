@@ -6,7 +6,9 @@ import {
   logout,
   googleAuth,
   getUser,
+  updateUser,
 } from "../controllers/auth.controller.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 const authRouter = Router();
 
@@ -21,5 +23,7 @@ authRouter.post("/logout", logout);
 authRouter.post("/google", googleAuth);
 
 authRouter.get("/user", getUser);
+
+authRouter.patch("/user", authenticate, updateUser);
 
 export { authRouter };
