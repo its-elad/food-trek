@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { User } from "../models/user.model.js";
 import {
+  googleLoginSchema,
   loginSchema,
   registerSchema,
   updateUserSchema,
@@ -11,9 +12,7 @@ import {
 } from "@food-trek/schemas";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import { env } from "../env.js";
-
-const sendError = (res: Response, code: number, message: string) =>
-  res.status(code).json({ message });
+import { sendError } from "../common/utils.js";
 
 const ACCESS_MAX_AGE = 24 * 60 * 60 * 1000; // 1 day
 const REFRESH_MAX_AGE = 2 * 24 * 60 * 60 * 1000; // 2 days
@@ -104,9 +103,8 @@ export const login = async (req: Request, res: Response) => {
   const { username, password } = parsedBody.data;
 
   try {
-    // Allow login by username OR email
     const user = await User.findOne({
-      $or: [{ username }, { email: username }],
+      username,
     });
 
     if (!user || !user.password) {
@@ -145,9 +143,14 @@ export const refresh = async (req: Request, res: Response) => {
   const secret = env.JWT_SECRET!;
 
   try {
-    const decoded = jwt.verify(refreshToken, secret) as unknown as {
-      _id: string;
-    };
+    let decoded = null;
+    try {
+      decoded = jwt.verify(refreshToken, secret) as {
+        _id: string;
+      };
+    } catch (error) {
+      return sendError(res, 401, "Invalid refresh token");
+    }
     const user = await User.findById(decoded._id);
 
     if (!user) {
@@ -159,7 +162,7 @@ export const refresh = async (req: Request, res: Response) => {
       user.refreshTokens = [];
       await user.save();
       clearTokenCookies(res);
-      console.warn("⚠️  Possible token theft for user:", user._id);
+      console.warn("Possible token theft for user:", user._id);
       return sendError(res, 401, "Invalid refresh token");
     }
 
@@ -175,8 +178,9 @@ export const refresh = async (req: Request, res: Response) => {
       email: user.email,
       imgUrl: user.imgUrl,
     } satisfies UserInfo);
-  } catch (_err) {
-    sendError(res, 401, "Invalid or expired refresh token");
+  } catch (err) {
+    console.error("refresh error", err);
+    sendError(res, 500, "Invalid or expired refresh token");
   }
 };
 
@@ -196,31 +200,23 @@ export const logout = async (req: Request, res: Response) => {
         );
         await user.save();
       }
-    } catch {
-      // expired token – still clear cookies
-    }
+    } catch {}
   }
 
   clearTokenCookies(res);
   res.sendStatus(204);
 };
 
-export const getUser = async (req: Request, res: Response) => {
-  const accessToken = req.cookies.accessToken as string | undefined;
-
-  if (!accessToken) {
+export const getUser = async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
     return sendError(res, 401, "Not authenticated");
   }
 
-  const secret = env.JWT_SECRET!;
-
   try {
-    const decoded = jwt.verify(accessToken, secret) as unknown as {
-      _id: string;
-    };
-    const user = await User.findById(decoded._id).select(
-      "-password -refreshTokens"
-    );
+    const user = await User.findById(req.user._id, {
+      password: 0,
+      refreshTokens: 0,
+    });
     if (!user) return sendError(res, 401, "User not found");
     res.json({
       _id: user._id.toString(),
@@ -228,15 +224,20 @@ export const getUser = async (req: Request, res: Response) => {
       email: user.email,
       imgUrl: user.imgUrl,
     } satisfies UserInfo);
-  } catch (_err) {
-    sendError(res, 401, "Invalid or expired token");
+  } catch (error) {
+    console.error("getUser error", error);
+    sendError(res, 500, "Internal server error");
   }
 };
 
 const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 export const googleAuth = async (req: Request, res: Response) => {
-  const { credential } = req.body as { credential?: string };
+  const parsedBody = googleLoginSchema.safeParse(req.body);
+  if (parsedBody.success === false) {
+    return sendError(res, 400, "Google credential is required");
+  }
+  const { credential } = parsedBody.data;
 
   if (!credential) {
     return sendError(res, 400, "Google credential is required");
@@ -338,7 +339,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     } satisfies UserInfo);
   } catch (err) {
     console.error("update user error", err);
-    sendError(res, 500, "Internal server error");
+    sendError(res, 500);
   }
 };
 

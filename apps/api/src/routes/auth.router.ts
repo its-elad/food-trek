@@ -22,7 +22,7 @@ authRouter.post("/logout", logout);
 
 authRouter.post("/google", googleAuth);
 
-authRouter.get("/user", getUser);
+authRouter.get("/user", authenticate, getUser);
 
 authRouter.patch("/user", authenticate, updateUser);
 
