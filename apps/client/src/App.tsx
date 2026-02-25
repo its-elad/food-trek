@@ -10,22 +10,10 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/user"
-        element={
-          <ProtectedRoute>
-            <UserPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/user" element={<UserPage />} />
+      </Route>
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

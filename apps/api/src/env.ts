@@ -7,6 +7,10 @@ const envSchema = z.object({
   CLIENT_URL: z.string().default("http://localhost:8080"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
   GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
+  IS_TEST_MODE: z
+    .string()
+    .default("false")
+    .transform((val) => val === "true"),
 });
 
 export const env = envSchema.parse(process.env);

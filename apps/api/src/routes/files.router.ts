@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
       .split(".")
       .filter(Boolean) // removes empty extensions (e.g. `filename...txt`)
       .slice(1)
-      .join(".");
+      .join(".").toLowerCase();
     cb(null, Date.now() + "." + ext);
   },
 });
@@ -39,7 +39,10 @@ filesRouter.post("/", (req, res) => {
     if (err) {
       return res.status(400).send({ error: err.message });
     }
-    const filePath = env.SERVER_URL + "/" + req.file?.path.replace(/\\/g, "/");
+    if (!req.file) {
+      return res.status(400).send({ error: "No file uploaded" });
+    }
+    const filePath = env.SERVER_URL + "/" + req.file.path.replace(/\\/g, "/");
     console.log("File uploaded:", filePath);
     res.status(200).send({ url: filePath });
   });

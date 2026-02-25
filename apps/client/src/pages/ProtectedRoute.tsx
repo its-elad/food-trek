@@ -1,9 +1,8 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.js";
-import type { ReactNode } from "react";
 import { CircularProgress, Box } from "@mui/material";
 
-export default function ProtectedRoute({ children }: { children: ReactNode }) {
+export default function ProtectedRoute() {
   const { user, isGetUserLoading } = useAuth();
 
   if (isGetUserLoading) {
@@ -21,5 +20,5 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  return user ? <Outlet /> : <Navigate to="/login" replace />;
 }

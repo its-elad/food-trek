@@ -8,7 +8,21 @@ import {
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
 import { useRef } from "react";
 
-const UserAvatar = ({
+type UploadUserAvatarProps = {
+  img?: string | File | null;
+  avatarProps?: Omit<AvatarProps, "src">;
+} & (
+  | {
+      onClick?: (file: File | null) => void;
+      isEditMode?: false;
+    }
+  | {
+      onClick: (file: File | null) => void;
+      isEditMode: true;
+    }
+);
+
+const StyledUserAvatar = ({
   img,
   avatarProps,
   onClick,
@@ -37,20 +51,6 @@ const UserAvatar = ({
   );
 };
 
-type UploadUserAvatarProps = {
-  img?: string | File | null;
-  avatarProps?: Omit<AvatarProps, "src">;
-} & (
-  | {
-      onClick?: (file: File | null) => void;
-      isEditMode?: false;
-    }
-  | {
-      onClick: (file: File | null) => void;
-      isEditMode: true;
-    }
-);
-
 export const UploadUserAvatar = ({
   img,
   onClick,
@@ -60,7 +60,7 @@ export const UploadUserAvatar = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isEditMode) {
-    return <UserAvatar img={img} avatarProps={avatarProps} />;
+    return <StyledUserAvatar img={img} avatarProps={avatarProps} />;
   }
 
   return (
@@ -75,7 +75,7 @@ export const UploadUserAvatar = ({
           onClick?.(event.target.files?.[0] ?? null);
         }}
       />
-      <UserAvatar
+      <StyledUserAvatar
         img={img}
         avatarProps={avatarProps}
         onClick={() => fileInputRef.current?.click()}
