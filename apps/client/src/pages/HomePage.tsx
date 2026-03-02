@@ -23,6 +23,9 @@ export default function HomePage() {
       <Button variant="outlined" color="primary" href="/user">
         User Page
       </Button>
+      <Button variant="contained" color="primary" href="/chat">
+        AI Chatbot
+      </Button>
       <Typography color="text.secondary">{user?.email}</Typography>
       <Button variant="outlined" color="error" onClick={logout} sx={{ mt: 2 }}>
         Sign Out
