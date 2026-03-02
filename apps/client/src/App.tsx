@@ -1,71 +1,22 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
-import { Button, useColorScheme } from "@mui/material";
-import baseApi from "./api/baseApi";
-import { useMutation } from "@tanstack/react-query";
-import { useLoading } from "./contexts/LoadingContext";
+import { Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage.js';
+import RegisterPage from './pages/RegisterPage.js';
+import HomePage from './pages/HomePage.js';
+import UserPage from './pages/UserPage.js';
+import ProtectedRoute from './pages/ProtectedRoute.js';
 
 function App() {
-  const [count, setCount] = useState(0);
-  const { colorScheme, setColorScheme } = useColorScheme();
-  const { setLoading } = useLoading();
-
-  const testMutation = useMutation({
-    mutationKey: ["example"],
-    mutationFn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return (await baseApi.get<string>("")).data;
-    },
-  });
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      {testMutation.data && JSON.stringify(testMutation.data)}
-      <h1>Vite + React</h1>
-      <Button
-        onClick={() => {
-          setColorScheme(colorScheme === "light" ? "dark" : "light");
-        }}
-      >
-        Toggle Theme ({colorScheme})
-      </Button>
-      <Button
-        onClick={() => {
-          setLoading(true);
-          setTimeout(() => setLoading(false), 1000);
-        }}
-      >
-        check loading
-      </Button>
-      <Button
-        onClick={() => {
-          testMutation.mutate();
-        }}
-      >
-        check tanstack mutation
-      </Button>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/user" element={<UserPage />} />
+      </Route>
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
