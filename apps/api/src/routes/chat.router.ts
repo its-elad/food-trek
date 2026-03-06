@@ -1,0 +1,54 @@
+import { chat, convertMessagesToModelMessages, toServerSentEventsStream } from "@tanstack/ai";
+import { Readable } from "stream";
+import { showNotificationClientDef } from "@food-trek/schemas";
+import { createOpenRouterText } from "@tanstack/ai-openrouter";
+import { Router, Request, Response } from "express";
+import { getCurrentTime } from "../tools/tools.js";
+import { env } from "../env.js";
+
+export const chatRouter = Router();
+
+chatRouter.post("/", async (req: Request, res: Response) => {
+  const { messages, data } = req.body;
+  const conversationId = data?.conversationId;
+
+  if (!messages || !Array.isArray(messages)) {
+    res.status(400).json({ error: "messages array is required" });
+    return;
+  }
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  try {
+    const modelMessages = convertMessagesToModelMessages(messages);
+
+    const chatStream = chat({
+      adapter: createOpenRouterText(env.OPENROUTER_MODEL, env.OPENROUTER_API_KEY),
+      messages: modelMessages as any,
+      stream: true,
+      conversationId,
+      tools: [
+        getCurrentTime,
+        showNotificationClientDef,
+      ],
+    });
+
+    const sseStream = toServerSentEventsStream(chatStream);
+    const nodeStream = Readable.fromWeb(sseStream as any);
+
+    nodeStream.on("error", (err) => {
+      console.error("SSE stream error:", err);
+      res.end();
+    });
+
+    nodeStream.pipe(res);
+  } catch (error) {
+    console.error("Error in chat endpoint:", error);
+    const message = error instanceof Error ? error.message : "An error occurred";
+    res.write(`data: ${JSON.stringify({ type: "RUN_ERROR", error: { message } })}\n\n`);
+    res.end();
+  }
+});

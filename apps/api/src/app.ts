@@ -5,6 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import { env } from "./env.js";
 import { requestLogger } from "./middleware/logger.middleware.js";
 import { authRouter } from "./routes/auth.router.js";
+import { chatRouter } from "./routes/chat.router.js";
 import { filesRouter } from "./routes/files.router.js";
 import { generateOpenAPIDocument } from "./swagger.js";
 
@@ -23,6 +24,7 @@ export function createApp() {
   app.use(requestLogger);
 
   app.use("/api/auth", authRouter);
+  app.use("/api/chat", chatRouter);
   app.use("/api/files", filesRouter);
   app.use("/public", express.static("public"));
 

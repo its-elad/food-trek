@@ -1,5 +1,5 @@
 import z from "zod";
-
+import { OpenRouterModelOptionsByName } from "@tanstack/ai-openrouter";
 const envSchema = z.object({
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
   SERVER_URL: z.string().default("http://localhost:3000"),
@@ -11,6 +11,13 @@ const envSchema = z.object({
     .string()
     .default("false")
     .transform((val) => val === "true"),
+  OPENROUTER_API_KEY: z.string().min(1, "OPENROUTER_API_KEY is required"),
+  OPENROUTER_MODEL: z
+    .string()
+    .min(1, "OPENROUTER_MODEL is required")
+    .transform((modelName) => {
+      return modelName as keyof OpenRouterModelOptionsByName;
+    }),
 });
 
 export const env = envSchema.parse(process.env);
