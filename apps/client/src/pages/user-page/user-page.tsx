@@ -1,30 +1,22 @@
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Divider,
-  Grid,
-  Skeleton,
-  Snackbar,
-  Alert,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Snackbar, Alert, TextField, Typography } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
-import { useAuth } from "../contexts/AuthContext.js";
-import { uploadFile } from "../api/filesApi.js";
+import { useAuth } from "../../contexts/AuthContext.js";
+import { uploadFile } from "../../api/filesApi.js";
 import { updateUserSchema, type UpdateUserReq } from "@food-trek/schemas";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
-import { UploadUserAvatar } from "../components/UploadUserAvatar.js";
-import { updateUser } from "../api/authApi.js";
+import { UploadUserAvatar } from "../../components/UploadUserAvatar.js";
+import { updateUser } from "../../api/authApi.js";
+import styles from "./user-page.module.css";
+import { useQuery } from "@tanstack/react-query";
+import { getPostsByUserId } from "../../api/postsApi.js";
+import { Post } from "../../components";
 
-const SKELETON_POST_COUNT = 6;
-
-export default function UserPage() {
+export const UserPage: React.FC = () => {
   const { user, setUser } = useAuth();
 
   const [isEditMode, setIsEditMode] = useState(false);
@@ -86,30 +78,21 @@ export default function UserPage() {
       setIsEditMode(false);
       setImgFile(null);
     } catch (err) {
-      const message =
-        (err instanceof AxiosError && err.response?.data?.message) ||
-        "Failed to update profile";
+      const message = (err instanceof AxiosError && err.response?.data?.message) || "Failed to update profile";
       setSnackbar({ open: true, message, severity: "error" });
     }
   };
 
-  return (
-    <Box
-      height="100vh"
-      width="100vw"
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      flexDirection="column"
-      sx={{ px: 3, py: 6 }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 4, mb: 5 }}>
-        <UploadUserAvatar
-          img={imgFile || user?.imgUrl}
-          isEditMode={isEditMode}
-          onClick={setImgFile}
-        />
+  const { data: loggedInUserPosts } = useQuery({
+    queryKey: getPostsByUserId(user?._id ?? "").key,
+    queryFn: getPostsByUserId(user?._id ?? "").fn,
+    enabled: !!user,
+  });
 
+  return (
+    <div className={styles.pageContainer}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 4, mb: 5 }}>
+        <UploadUserAvatar img={imgFile || user?.imgUrl} isEditMode={isEditMode} onClick={setImgFile} />
         <Box sx={{ flex: 1 }}>
           {isEditMode ? (
             <TextField
@@ -129,7 +112,6 @@ export default function UserPage() {
             {user?.email}
           </Typography>
         </Box>
-
         <Box sx={{ display: "flex", gap: 1 }}>
           {isEditMode && (
             <Button
@@ -152,47 +134,26 @@ export default function UserPage() {
           </Button>
         </Box>
       </Box>
-
-      <Divider sx={{ mb: 4 }} />
-
       <Typography variant="h6" fontWeight={600} gutterBottom>
         Posts
       </Typography>
-
-      <Grid container spacing={2} width="50%">
-        {Array.from({ length: SKELETON_POST_COUNT }).map((_, i) => (
-          <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
-            <Box
-              sx={{
-                borderRadius: 2,
-                overflow: "hidden",
-                border: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <Skeleton variant="rectangular" height={180} />
-              <Box sx={{ p: 1.5 }}>
-                <Skeleton variant="text" width="70%" />
-                <Skeleton variant="text" width="40%" />
-              </Box>
-            </Box>
-          </Grid>
+      <div className={styles.postsWrapper}>
+        {loggedInUserPosts?.map((postData) => (
+          <div key={postData._id} className={styles.postItem}>
+            <Post postData={postData} />
+          </div>
         ))}
-      </Grid>
-
+      </div>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3500}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </div>
   );
-}
+};
