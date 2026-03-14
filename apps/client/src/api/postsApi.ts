@@ -1,27 +1,17 @@
+import type { NewPostData, PostData } from "@food-trek/schemas";
 import { baseApi } from "./baseApi";
 
-type NewPostData = {
-  userId: string;
-  imageUrl: string;
-  text: string;
+export const getHomeFeedPosts = {
+  fn: () => baseApi.get<PostData[]>("/posts/home-feed").then((response) => response.data),
+  key: ["posts", "home-feed"] as const,
 };
-
-export type PostData = NewPostData & {
-  _id: string;
-  createdAt: Date;
-};
-
-export const getHomeFeedPosts = (loggedInUserId: string) => ({
-  fn: () => baseApi.get<PostData[]>(`/posts/home-feed/${loggedInUserId}`).then((response) => response.data),
-  key: ["posts", "home-feed", loggedInUserId] as const,
-});
 
 export const createNewPost = {
-  fn: (newPostData: NewPostData) => baseApi.post<PostData>(`/posts`, newPostData).then((response) => response.data),
+  fn: (newPostData: NewPostData) => baseApi.post("/posts", newPostData).then((response) => response.data),
   key: ["posts", "create"] as const,
 };
 
-export const getPostsByUserId = (userId: string) => ({
-  fn: () => baseApi.get<PostData[]>(`/posts/user/${userId}`).then((response) => response.data),
-  key: ["posts", userId] as const,
-});
+export const getLoggedInUserPosts = {
+  fn: () => baseApi.get<PostData[]>("/posts/user-page").then((response) => response.data),
+  key: ["posts", "user-page"] as const,
+};

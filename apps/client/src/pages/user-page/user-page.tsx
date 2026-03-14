@@ -13,7 +13,7 @@ import { UploadUserAvatar } from "../../components/UploadUserAvatar.js";
 import { updateUser } from "../../api/authApi.js";
 import styles from "./user-page.module.css";
 import { useQuery } from "@tanstack/react-query";
-import { getPostsByUserId } from "../../api/postsApi.js";
+import { getLoggedInUserPosts } from "../../api/postsApi.js";
 import { Post } from "../../components";
 
 export const UserPage: React.FC = () => {
@@ -84,9 +84,8 @@ export const UserPage: React.FC = () => {
   };
 
   const { data: loggedInUserPosts } = useQuery({
-    queryKey: getPostsByUserId(user?._id ?? "").key,
-    queryFn: getPostsByUserId(user?._id ?? "").fn,
-    enabled: !!user,
+    queryKey: getLoggedInUserPosts.key,
+    queryFn: getLoggedInUserPosts.fn,
   });
 
   return (

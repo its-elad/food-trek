@@ -8,7 +8,6 @@ import { authRouter } from "./routes/auth.router.js";
 import { chatRouter } from "./routes/chat.router.js";
 import { filesRouter } from "./routes/files.router.js";
 import postsRouter from "./routes/posts.router.js";
-import usersRouter from "./routes/users.router.js";
 import { generateOpenAPIDocument } from "./swagger.js";
 
 export function createApp() {
@@ -29,7 +28,6 @@ export function createApp() {
   app.use("/api/chat", chatRouter);
   app.use("/api/files", filesRouter);
   app.use("/api/posts", postsRouter);
-  app.use("/api/users", usersRouter);
   app.use("/public", express.static("public"));
 
   const openApiDocument = generateOpenAPIDocument(env.SERVER_URL);
