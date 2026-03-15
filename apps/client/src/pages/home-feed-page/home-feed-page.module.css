@@ -1,0 +1,28 @@
+.pageContainer {
+  display: grid;
+  grid-template-areas:
+    "homeFeedPosts"
+    "addPostButton";
+  grid-template-rows: 1fr auto;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  justify-items: center;
+}
+
+.homeFeedPosts {
+  grid-area: homeFeedPosts;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 830px;
+  padding-top: 1rem;
+  overflow-y: auto;
+}
+
+.addPostButton {
+  grid-area: addPostButton;
+  padding: 2rem 0;
+}
