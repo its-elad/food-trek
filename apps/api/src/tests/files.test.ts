@@ -25,9 +25,7 @@ afterAll(async () => {
     const files = fs.readdirSync(uploadsDir);
     for (const file of files) {
       if (/^\d+\.(png|jpg|jpeg|gif|webp)$/i.test(file.toLowerCase())) {
-        try {
-          fs.unlinkSync(path.join(uploadsDir, file));
-        } catch {}
+        fs.unlinkSync(path.join(uploadsDir, file));
       }
     }
   }
@@ -39,18 +37,15 @@ describe("POST /api/files", () => {
    * Using a real PNG binary ensures multer's image mime-type check passes.
    */
   const minimalPng = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk" +
-      "+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk" + "+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
     "base64"
   );
 
   test("uploads a valid PNG file and returns 200 with a URL", async () => {
-    const res = await request(app)
-      .post("/api/files")
-      .attach("file", minimalPng, {
-        filename: "pixel.png",
-        contentType: "image/png",
-      });
+    const res = await request(app).post("/api/files").attach("file", minimalPng, {
+      filename: "pixel.png",
+      contentType: "image/png",
+    });
 
     expect(res.statusCode).toBe(200);
     expect(typeof res.body.url).toBe("string");
@@ -58,12 +53,10 @@ describe("POST /api/files", () => {
   });
 
   test("uploaded image can be retrieved via the returned URL", async () => {
-    const uploadRes = await request(app)
-      .post("/api/files")
-      .attach("file", minimalPng, {
-        filename: "missingno.png",
-        contentType: "image/png",
-      });
+    const uploadRes = await request(app).post("/api/files").attach("file", minimalPng, {
+      filename: "missingno.png",
+      contentType: "image/png",
+    });
 
     expect(uploadRes.statusCode).toBe(200);
     expect(typeof uploadRes.body.url).toBe("string");
@@ -77,16 +70,12 @@ describe("POST /api/files", () => {
 
   test("uploads a JPEG file and returns 200 with a URL", async () => {
     // Minimal JPEG header bytes (SOI + APP0 marker, enough for mime detection)
-    const minimalJpeg = Buffer.from([
-      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
-    ]);
+    const minimalJpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
 
-    const res = await request(app)
-      .post("/api/files")
-      .attach("file", minimalJpeg, {
-        filename: "test-image.jpg",
-        contentType: "image/jpeg",
-      });
+    const res = await request(app).post("/api/files").attach("file", minimalJpeg, {
+      filename: "test-image.jpg",
+      contentType: "image/jpeg",
+    });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.url?.length).toBeGreaterThan(0);
@@ -95,12 +84,10 @@ describe("POST /api/files", () => {
   test("returns 400 when uploading a non-image file (text/plain)", async () => {
     const textContent = Buffer.from("Luke, I am your father.");
 
-    const res = await request(app)
-      .post("/api/files")
-      .attach("file", textContent, {
-        filename: "note.txt",
-        contentType: "text/plain",
-      });
+    const res = await request(app).post("/api/files").attach("file", textContent, {
+      filename: "note.txt",
+      contentType: "text/plain",
+    });
 
     expect(res.statusCode).toBe(400);
     expect(res.body).toHaveProperty("error");

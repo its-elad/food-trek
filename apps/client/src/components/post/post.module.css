@@ -1,10 +1,39 @@
 .postContainer {
   display: flex;
   flex-direction: column;
-  width: 250px;
+  width: 280px;
+  height: fit-content;
   border: 3px solid gray;
   border-radius: 0.5rem;
   background-color: whitesmoke;
+}
+
+.cardHeader {
+  display: flex;
+  padding: 1rem 0.7rem 1rem 1rem;
+  align-items: center;
+  width: 100%;
+}
+
+.username {
+  padding-left: 0.5rem;
+}
+
+.iconButtons {
+  margin-left: auto;
+  display: flex;
+}
+
+.editIcon:hover {
+  cursor: pointer;
+}
+
+.deleteIcon {
+  margin-left: 0.2rem;
+}
+
+.deleteIcon:hover {
+  cursor: pointer;
 }
 
 .profileImage {
@@ -12,8 +41,8 @@
 }
 
 .postImage {
-  width: 215px;
-  height: 215px;
+  width: 245px;
+  height: 245px;
   object-fit: cover;
   align-self: center;
 }

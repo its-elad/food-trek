@@ -3,13 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { User } from "../models/user.model.js";
-import {
-  googleLoginSchema,
-  loginSchema,
-  registerSchema,
-  updateUserSchema,
-  UserInfo,
-} from "@food-trek/schemas";
+import { googleLoginSchema, loginSchema, registerSchema, updateUserSchema, UserInfo } from "@food-trek/schemas";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import { env } from "../env.js";
 import { sendError } from "../common/utils.js";
@@ -19,6 +13,7 @@ const REFRESH_MAX_AGE = 2 * 24 * 60 * 60 * 1000; // 2 days
 
 const COOKIE_BASE = {
   httpOnly: true,
+  // eslint-disable-next-line turbo/no-undeclared-env-vars
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax",
 } as const;
@@ -30,11 +25,9 @@ const generateTokens = (userId: string): Tokens => {
   const accessToken = jwt.sign({ _id: userId }, secret, {
     expiresIn: ACCESS_MAX_AGE / 1000,
   });
-  const refreshToken = jwt.sign(
-    { _id: userId, rand: Math.floor(Math.random() * 1000000) },
-    secret,
-    { expiresIn: REFRESH_MAX_AGE / 1000 }
-  );
+  const refreshToken = jwt.sign({ _id: userId, rand: Math.floor(Math.random() * 1000000) }, secret, {
+    expiresIn: REFRESH_MAX_AGE / 1000,
+  });
   return { accessToken, refreshToken };
 };
 
@@ -149,6 +142,7 @@ export const refresh = async (req: Request, res: Response) => {
         _id: string;
       };
     } catch (error) {
+      console.error(error);
       return sendError(res, 401, "Invalid refresh token");
     }
     const user = await User.findById(decoded._id);
@@ -189,18 +183,15 @@ export const logout = async (req: Request, res: Response) => {
 
   if (refreshToken) {
     const secret = env.JWT_SECRET!;
-    try {
-      const decoded = jwt.verify(refreshToken, secret) as unknown as {
-        _id: string;
-      };
-      const user = await User.findById(decoded._id);
-      if (user) {
-        user.refreshTokens = user.refreshTokens.filter(
-          (t) => t !== refreshToken
-        );
-        await user.save();
-      }
-    } catch {}
+
+    const decoded = jwt.verify(refreshToken, secret) as unknown as {
+      _id: string;
+    };
+    const user = await User.findById(decoded._id);
+    if (user) {
+      user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
+      await user.save();
+    }
   }
 
   clearTokenCookies(res);
@@ -262,9 +253,7 @@ export const googleAuth = async (req: Request, res: Response) => {
     if (!user) {
       // First-time Google sign-in – create account
       const rawName: string = name ?? email ?? "user";
-      const username = (rawName.split("@")[0] ?? rawName)
-        .replace(/\s+/g, "_")
-        .toLowerCase();
+      const username = (rawName.split("@")[0] ?? rawName).replace(/\s+/g, "_").toLowerCase();
       // Ensure username uniqueness
       const uniqueUsername = await ensureUniqueUsername(username);
       user = await User.create({
@@ -306,11 +295,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 
   const { username, imgUrl } = parsed.data;
   if (username === undefined && imgUrl === undefined) {
-    return sendError(
-      res,
-      400,
-      "At least one field (username or imgUrl) must be provided"
-    );
+    return sendError(res, 400, "At least one field (username or imgUrl) must be provided");
   }
 
   try {
