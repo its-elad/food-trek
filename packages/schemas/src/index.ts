@@ -4,3 +4,4 @@ export * from "./common";
 export * from "./client-tools";
 export * from "./server-tools";
 export * from "./posts";
+export * from "./comments";
