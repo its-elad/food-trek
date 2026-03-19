@@ -1,24 +1,41 @@
 import { Button, Modal, TextField } from "@mui/material";
-import { createNewPost } from "../../api/postsApi";
-import styles from "./add-post-modal.module.css";
-import { useState } from "react";
+import { createNewPost, updatePost } from "../../api/postsApi";
+import styles from "./add-or-update-post-modal.module.css";
+import { useEffect, useState } from "react";
 import { uploadFile } from "../../api/filesApi";
+import type { PostData } from "@food-trek/schemas";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   isModalOpen: boolean;
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  postData?: PostData;
 }
 
-export const AddPostModal: React.FC<Props> = ({ isModalOpen, setIsModalOpen }) => {
+export const AddOrUpdatePostModal: React.FC<Props> = ({ isModalOpen, setIsModalOpen, postData }) => {
+  const isUpdateMode = !!postData;
+
   const [postText, setPostText] = useState<string | null>(null);
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
 
-  const imagePreview = postImageFile ? URL.createObjectURL(postImageFile) : null;
+  const imagePreview = postImageFile ? URL.createObjectURL(postImageFile) : isUpdateMode ? postData.imageUrl : null;
+
+  useEffect(() => {
+    if (isModalOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPostText(isUpdateMode ? postData.text : null);
+    }
+  }, [isModalOpen, isUpdateMode, postData]);
+
+  const queryClient = useQueryClient();
 
   const handleOnClose = () => {
     setIsModalOpen(false);
-    setPostText(null);
     setPostImageFile(null);
+
+    if (isUpdateMode) {
+      queryClient.invalidateQueries({ queryKey: ["posts", "user-page"] });
+    }
   };
 
   return (
@@ -56,10 +73,24 @@ export const AddPostModal: React.FC<Props> = ({ isModalOpen, setIsModalOpen }) =
         <Button
           variant="contained"
           color="success"
-          disabled={!postImageFile || !postText || postText === ""}
+          disabled={
+            isUpdateMode
+              ? (!postImageFile && postText === postData.text) || postText === ""
+              : !postImageFile || !postText || postText === ""
+          }
           sx={{ textTransform: "none" }}
           onClick={async () => {
-            if (postImageFile && postText) {
+            if (isUpdateMode && postText) {
+              if (postImageFile) {
+                const { url: imageUrl } = await uploadFile.fn(postImageFile);
+
+                updatePost
+                  .fn(postData._id, { imageUrl, text: postText !== postData.text ? postText : undefined })
+                  .then(() => handleOnClose());
+              } else {
+                updatePost.fn(postData._id, { text: postText }).then(() => handleOnClose());
+              }
+            } else if (postImageFile && postText) {
               const { url: imageUrl } = await uploadFile.fn(postImageFile);
 
               createNewPost.fn({ imageUrl, text: postText }).then(() => handleOnClose());

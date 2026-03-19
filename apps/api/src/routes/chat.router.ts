@@ -27,17 +27,14 @@ chatRouter.post("/", async (req: Request, res: Response) => {
 
     const chatStream = chat({
       adapter: createOpenRouterText(env.OPENROUTER_MODEL, env.OPENROUTER_API_KEY),
-      messages: modelMessages as any,
+      messages: modelMessages as never,
       stream: true,
       conversationId,
-      tools: [
-        getCurrentTime,
-        showNotificationClientDef,
-      ],
+      tools: [getCurrentTime, showNotificationClientDef],
     });
 
     const sseStream = toServerSentEventsStream(chatStream);
-    const nodeStream = Readable.fromWeb(sseStream as any);
+    const nodeStream = Readable.fromWeb(sseStream as never);
 
     nodeStream.on("error", (err) => {
       console.error("SSE stream error:", err);
