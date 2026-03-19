@@ -4,7 +4,8 @@
   "description": "Express Backend for FoodTrek",
   "main": "index.js",
   "scripts": {
-    "start": "node --env-file=.env.prod dist/index.js",
+    "start": "pm2 restart ecosystem.config.cjs --env production --node-args=\"-r dotenv/config\"",
+    "delete": "pm2 delete ecosystem.config.cjs",
     "dev": "tsx --watch --env-file=.env src/index.ts",
     "build": "tsc",
     "lint": "eslint .",

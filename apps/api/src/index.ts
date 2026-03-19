@@ -1,12 +1,9 @@
-import dotenv from "dotenv";
 import mongoose from "mongoose";
 import { env } from "./env.js";
 import { createApp } from "./app.js";
 import http from "http";
 import https from "https";
 import { readFileSync } from "fs";
-
-dotenv.config();
 
 const app = createApp();
 const port = env.PORT;

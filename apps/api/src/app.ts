@@ -10,6 +10,7 @@ import { filesRouter } from "./routes/files.router.js";
 import commentsRouter from "./routes/comments.router.js";
 import postsRouter from "./routes/posts.router.js";
 import { generateOpenAPIDocument } from "./swagger.js";
+import path from "path";
 
 export function createApp() {
   const app = express();
@@ -31,7 +32,6 @@ export function createApp() {
   app.use("/api/posts", postsRouter);
   app.use("/api/comments", commentsRouter);
   app.use("/public", express.static("public"));
-  app.use("/", express.static("public/client"));
 
   const openApiDocument = generateOpenAPIDocument(env.SERVER_URL);
   app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
@@ -44,8 +44,11 @@ export function createApp() {
   app.get("/api", (_req: Request, res: Response) => {
     res.send(welcomeResponse);
   });
-  app.get("/", (_req: Request, res: Response) => {
-    res.send(welcomeResponse);
+  // Serve client
+  app.use(express.static("public/client"));
+  // SPA fallback
+  app.get("*splat", (_req, res) => {
+    res.sendFile(path.join(import.meta.dirname, "../public/client", "index.html"));
   });
 
   return app;

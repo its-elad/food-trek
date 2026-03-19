@@ -1,5 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
 import z from "zod";
-import { OpenRouterModelOptionsByName } from "@tanstack/ai-openrouter";
+import type { OpenRouterModelOptionsByName } from "@tanstack/ai-openrouter";
 const envSchema = z.object({
   NODE_ENV: z.string().default("development"),
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
