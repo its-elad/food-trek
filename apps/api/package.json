@@ -4,7 +4,7 @@
   "description": "Express Backend for FoodTrek",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node --env-file=.env.prod dist/index.js",
     "dev": "tsx --watch --env-file=.env src/index.ts",
     "build": "tsc",
     "lint": "eslint .",

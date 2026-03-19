@@ -31,6 +31,7 @@ export function createApp() {
   app.use("/api/posts", postsRouter);
   app.use("/api/comments", commentsRouter);
   app.use("/public", express.static("public"));
+  app.use("/", express.static("public/client"));
 
   const openApiDocument = generateOpenAPIDocument(env.SERVER_URL);
   app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
