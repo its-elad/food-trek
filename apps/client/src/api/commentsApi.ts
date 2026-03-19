@@ -11,7 +11,7 @@ export const getCommentsCountByPostId = (postId: string) => ({
   key: ["comments", postId, "count"] as const,
 });
 
-export const getCommentsByPostId = (postId: string) => ({
+export const getCommentsByPostId = (postId: string | null) => ({
   fn: () => baseApi.get<CommentData[]>(`/comments/post/${postId}`).then((response) => response.data),
   key: ["comments", postId] as const,
 });

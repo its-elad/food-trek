@@ -3,32 +3,28 @@ import styles from "./post.module.css";
 import type { PostData } from "@food-trek/schemas";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useState } from "react";
-import { AddOrUpdatePostModal } from "../add-or-update-post-modal";
-import { deletePost } from "../../api/postsApi";
+import { deletePost, getLoggedInUserPosts } from "../../api/postsApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CommentIcon from "@mui/icons-material/Comment";
 import AddCommentIcon from "@mui/icons-material/AddComment";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import { AddCommentModal, ViewCommentsModal } from "../";
 import { getCommentsCountByPostId } from "../../api/commentsApi";
 
 interface Props {
   postData: PostData;
   isReadOnly?: boolean;
+  onViewComments: () => void;
+  onAddComment?: () => void;
+  onUpdatePost?: () => void;
 }
 
-export const Post: React.FC<Props> = ({ postData, isReadOnly = true }) => {
+export const Post: React.FC<Props> = ({ postData, isReadOnly = true, onViewComments, onAddComment, onUpdatePost }) => {
   const {
     _id: postId,
     userId: { username, imgUrl: userProfileImage },
     imageUrl: postImage,
     text: postText,
   } = postData;
-
-  const [isUpdatePostModalOpen, setIsUpdatePostModalOpen] = useState(false);
-  const [isAddCommentModalOpen, setIsAddCommentModalOpen] = useState(false);
-  const [isViewCommentsModalOpen, setIsViewCommentsModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -46,12 +42,12 @@ export const Post: React.FC<Props> = ({ postData, isReadOnly = true }) => {
         </div>
         {!isReadOnly && (
           <div className={styles.upperIconButtons}>
-            <EditIcon color="primary" className={styles.editIcon} onClick={() => setIsUpdatePostModalOpen(true)} />
+            <EditIcon color="primary" className={styles.editIcon} onClick={onUpdatePost} />
             <DeleteIcon
               color="error"
               className={styles.deleteIcon}
               onClick={() =>
-                deletePost.fn(postId).then(() => queryClient.invalidateQueries({ queryKey: ["posts", "user-page"] }))
+                deletePost.fn(postId).then(() => queryClient.invalidateQueries({ queryKey: getLoggedInUserPosts.key }))
               }
             />
           </div>
@@ -66,29 +62,18 @@ export const Post: React.FC<Props> = ({ postData, isReadOnly = true }) => {
           <ThumbUpIcon color="action" />
           <div
             className={`${styles.viewCommentsButton} ${commentsCountObject?.count === 0 && styles.disabledButton}`}
-            onClick={() => setIsViewCommentsModalOpen(true)}
+            onClick={onViewComments}
           >
             <CommentIcon color="primary" />
             {commentsCountObject?.count}
           </div>
           {isReadOnly && (
             <div className={styles.addCommentButton}>
-              <AddCommentIcon color="success" onClick={() => setIsAddCommentModalOpen(true)} />
+              <AddCommentIcon color="success" onClick={onAddComment} />
             </div>
           )}
         </div>
       </div>
-      <AddOrUpdatePostModal
-        isModalOpen={isUpdatePostModalOpen}
-        setIsModalOpen={setIsUpdatePostModalOpen}
-        postData={postData}
-      />
-      <ViewCommentsModal
-        isModalOpen={isViewCommentsModalOpen}
-        setIsModalOpen={setIsViewCommentsModalOpen}
-        postId={postId}
-      />
-      <AddCommentModal isModalOpen={isAddCommentModalOpen} setIsModalOpen={setIsAddCommentModalOpen} postId={postId} />
     </div>
   );
 };

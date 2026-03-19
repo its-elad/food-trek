@@ -2,10 +2,10 @@ import { Response } from "express";
 import PostModel from "../models/post.model.js";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import CommentModel from "../models/comment.model.js";
-import { NewCommentDataSchema } from "@food-trek/schemas";
+import { newCommentDataSchema } from "@food-trek/schemas";
 
 const addComment = async (req: AuthRequest, res: Response) => {
-  const parsedBody = NewCommentDataSchema.safeParse(req.body);
+  const parsedBody = newCommentDataSchema.safeParse(req.body);
 
   if (parsedBody.success === false) {
     return res.status(400).send("post-id and text are required");

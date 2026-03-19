@@ -1,26 +1,30 @@
 import { Button, Modal, TextField } from "@mui/material";
 import styles from "./add-comment-modal.module.css";
 import { useState } from "react";
-import { addComment } from "../../api/commentsApi";
+import { addComment, getCommentsByPostId, getCommentsCountByPostId } from "../../api/commentsApi";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   isModalOpen: boolean;
-  setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  postId: string;
+  onClose: () => void;
+  postId: string | null;
 }
 
-export const AddCommentModal: React.FC<Props> = ({ isModalOpen, setIsModalOpen, postId }) => {
-  const [commentText, setCommentPostText] = useState<string | null>(null);
-
+export const AddCommentModal: React.FC<Props> = ({ isModalOpen, onClose, postId }) => {
   const queryClient = useQueryClient();
 
+  const [commentText, setCommentPostText] = useState<string | null>(null);
+
+  if (!postId) {
+    return null;
+  }
+
   const handleOnClose = () => {
-    setIsModalOpen(false);
+    onClose();
     setCommentPostText(null);
 
-    queryClient.invalidateQueries({ queryKey: ["comments", postId, "count"] });
-    queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+    queryClient.invalidateQueries({ queryKey: getCommentsCountByPostId(postId).key });
+    queryClient.invalidateQueries({ queryKey: getCommentsByPostId(postId).key });
   };
 
   return (

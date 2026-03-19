@@ -4,10 +4,12 @@ import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", authenticate, postsController.createPost);
-router.get("/home-feed", authenticate, postsController.getHomeFeedPosts);
-router.get("/user-page", authenticate, postsController.getLoggedInUserPosts);
-router.patch("/:postId", authenticate, postsController.updatePost);
-router.delete("/:postId", authenticate, postsController.deletePost);
+router.use(authenticate);
+
+router.post("/", postsController.createPost);
+router.get("/home-feed", postsController.getHomeFeedPosts);
+router.get("/user-page", postsController.getLoggedInUserPosts);
+router.patch("/:postId", postsController.updatePost);
+router.delete("/:postId", postsController.deletePost);
 
 export default router;

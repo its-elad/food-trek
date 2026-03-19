@@ -1,5 +1,5 @@
 import { Button, Modal, TextField } from "@mui/material";
-import { createNewPost, updatePost } from "../../api/postsApi";
+import { createNewPost, getLoggedInUserPosts, updatePost } from "../../api/postsApi";
 import styles from "./add-or-update-post-modal.module.css";
 import { useEffect, useState } from "react";
 import { uploadFile } from "../../api/filesApi";
@@ -8,11 +8,11 @@ import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   isModalOpen: boolean;
-  setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onClose: () => void;
   postData?: PostData;
 }
 
-export const AddOrUpdatePostModal: React.FC<Props> = ({ isModalOpen, setIsModalOpen, postData }) => {
+export const AddOrUpdatePostModal: React.FC<Props> = ({ isModalOpen, onClose, postData }) => {
   const isUpdateMode = !!postData;
 
   const [postText, setPostText] = useState<string | null>(null);
@@ -30,13 +30,16 @@ export const AddOrUpdatePostModal: React.FC<Props> = ({ isModalOpen, setIsModalO
   const queryClient = useQueryClient();
 
   const handleOnClose = () => {
-    setIsModalOpen(false);
+    onClose();
     setPostImageFile(null);
 
     if (isUpdateMode) {
-      queryClient.invalidateQueries({ queryKey: ["posts", "user-page"] });
+      queryClient.invalidateQueries({ queryKey: getLoggedInUserPosts.key });
     }
   };
+
+  const isSaveButtonDisabledInUpdateMode = (!postImageFile && postText === postData?.text) || postText === "";
+  const isSaveButtonDisabledInAddMode = !postImageFile || !postText || postText === "";
 
   return (
     <Modal open={isModalOpen} onClose={handleOnClose}>
@@ -73,11 +76,7 @@ export const AddOrUpdatePostModal: React.FC<Props> = ({ isModalOpen, setIsModalO
         <Button
           variant="contained"
           color="success"
-          disabled={
-            isUpdateMode
-              ? (!postImageFile && postText === postData.text) || postText === ""
-              : !postImageFile || !postText || postText === ""
-          }
+          disabled={isUpdateMode ? isSaveButtonDisabledInUpdateMode : isSaveButtonDisabledInAddMode}
           sx={{ textTransform: "none" }}
           onClick={async () => {
             if (isUpdateMode && postText) {

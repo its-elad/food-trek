@@ -5,18 +5,19 @@ import { getCommentsByPostId } from "../../api/commentsApi";
 
 interface Props {
   isModalOpen: boolean;
-  setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  postId: string;
+  onClose: () => void;
+  postId: string | null;
 }
 
-export const ViewCommentsModal: React.FC<Props> = ({ isModalOpen, setIsModalOpen, postId }) => {
+export const ViewCommentsModal: React.FC<Props> = ({ isModalOpen, onClose, postId }) => {
   const { data: commentsData } = useQuery({
     queryKey: getCommentsByPostId(postId).key,
     queryFn: getCommentsByPostId(postId).fn,
+    enabled: !!postId,
   });
 
   return (
-    <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+    <Modal open={isModalOpen} onClose={onClose}>
       <div className={styles.modalContent}>
         {commentsData?.map(({ _id: commentId, userId: { username, imgUrl: userProfileImage }, text: postText }) => (
           <div key={commentId} className={styles.comment}>

@@ -3,7 +3,7 @@ import { getHomeFeedPosts } from "../../api/postsApi";
 import { Button } from "@mui/material";
 import styles from "./home-feed-page.module.css";
 import { useState } from "react";
-import { Post, AddOrUpdatePostModal } from "../../components";
+import { Post, AddOrUpdatePostModal, ViewCommentsModal, AddCommentModal } from "../../components";
 
 export const HomeFeedPage: React.FC = () => {
   const { data: homeFeedPosts } = useQuery({
@@ -13,17 +13,38 @@ export const HomeFeedPage: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [viewCommentsModalPostId, setViewCommentsModalPostId] = useState<string | null>(null);
+  const [addCommentModalPostId, setAddCommentModalPostId] = useState<string | null>(null);
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.homeFeedPosts}>
-        {homeFeedPosts && homeFeedPosts.map((postData) => <Post key={postData._id} postData={postData} />)}
+        {homeFeedPosts &&
+          homeFeedPosts.map((postData) => (
+            <Post
+              key={postData._id}
+              postData={postData}
+              onViewComments={() => setViewCommentsModalPostId(postData._id)}
+              onAddComment={() => setAddCommentModalPostId(postData._id)}
+            />
+          ))}
       </div>
       <div className={styles.addPostButton}>
         <Button variant="contained" color="success" onClick={() => setIsModalOpen(true)} sx={{ textTransform: "none" }}>
           Add Post
         </Button>
       </div>
-      <AddOrUpdatePostModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
+      <AddOrUpdatePostModal isModalOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ViewCommentsModal
+        isModalOpen={!!viewCommentsModalPostId}
+        onClose={() => setViewCommentsModalPostId(null)}
+        postId={viewCommentsModalPostId}
+      />
+      <AddCommentModal
+        isModalOpen={!!addCommentModalPostId}
+        onClose={() => setAddCommentModalPostId(null)}
+        postId={addCommentModalPostId}
+      />
     </div>
   );
 };
