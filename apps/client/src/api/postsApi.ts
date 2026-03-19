@@ -1,4 +1,4 @@
-import type { NewPostData, PostData } from "@food-trek/schemas";
+import type { NewPostData, PostData, UpdatePostData } from "@food-trek/schemas";
 import { baseApi } from "./baseApi";
 
 export const getHomeFeedPosts = {
@@ -14,4 +14,15 @@ export const createNewPost = {
 export const getLoggedInUserPosts = {
   fn: () => baseApi.get<PostData[]>("/posts/user-page").then((response) => response.data),
   key: ["posts", "user-page"] as const,
+};
+
+export const updatePost = {
+  fn: (postId: string, updatePostData: UpdatePostData) =>
+    baseApi.patch(`/posts/${postId}`, updatePostData).then((response) => response.data),
+  key: ["posts", "update"] as const,
+};
+
+export const deletePost = {
+  fn: (postId: string) => baseApi.delete(`/posts/${postId}`).then((response) => response.data),
+  key: ["posts", "delete"] as const,
 };

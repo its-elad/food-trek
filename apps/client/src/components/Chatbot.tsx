@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useChat, fetchServerSentEvents } from "@tanstack/ai-react";
 import { clientTools, createChatClientOptions, type AnyClientTool, type MessagePart } from "@tanstack/ai-client";
@@ -118,7 +119,7 @@ function ReasoningBlock({ content }: { content: string }) {
 
 function ToolCallPart<T extends AnyClientTool[]>({ part }: { part: Extract<MessagePart<T>, { type: "tool-call" }> }) {
   const isRunning = ["awaiting-input", "input-streaming", "input-complete"].includes(part.state);
-  const isError = (part.state as any) === "error";
+  const isError = (part.state as never) === "error";
   const isSuccess = ["output-complete", "output-streaming"].includes(part.state);
 
   return (

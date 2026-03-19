@@ -86,6 +86,7 @@ export const UserPage: React.FC = () => {
   const { data: loggedInUserPosts } = useQuery({
     queryKey: getLoggedInUserPosts.key,
     queryFn: getLoggedInUserPosts.fn,
+    enabled: !!user,
   });
 
   return (
@@ -138,9 +139,7 @@ export const UserPage: React.FC = () => {
       </Typography>
       <div className={styles.postsWrapper}>
         {loggedInUserPosts?.map((postData) => (
-          <div key={postData._id} className={styles.postItem}>
-            <Post postData={postData} />
-          </div>
+          <Post key={postData._id} postData={postData} isReadOnly={false} />
         ))}
       </div>
       <Snackbar

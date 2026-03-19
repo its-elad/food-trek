@@ -3,7 +3,7 @@ import { getHomeFeedPosts } from "../../api/postsApi";
 import { Button } from "@mui/material";
 import styles from "./home-feed-page.module.css";
 import { useState } from "react";
-import { Post, AddPostModal } from "../../components";
+import { Post, AddOrUpdatePostModal } from "../../components";
 
 export const HomeFeedPage: React.FC = () => {
   const { data: homeFeedPosts } = useQuery({
@@ -16,19 +16,14 @@ export const HomeFeedPage: React.FC = () => {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.homeFeedPosts}>
-        {homeFeedPosts &&
-          homeFeedPosts.map((postData) => (
-            <div className={styles.post} key={postData._id}>
-              <Post postData={postData} />
-            </div>
-          ))}
+        {homeFeedPosts && homeFeedPosts.map((postData) => <Post key={postData._id} postData={postData} />)}
       </div>
       <div className={styles.addPostButton}>
         <Button variant="contained" color="success" onClick={() => setIsModalOpen(true)} sx={{ textTransform: "none" }}>
           Add Post
         </Button>
       </div>
-      <AddPostModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
+      <AddOrUpdatePostModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />
     </div>
   );
 };
