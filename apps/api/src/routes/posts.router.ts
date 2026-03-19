@@ -1,13 +1,15 @@
 import express from "express";
-import postController from "../controllers/posts.controller.js";
+import postsController from "../controllers/posts.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", authenticate, postController.createPost);
-router.get("/home-feed", authenticate, postController.getHomeFeedPosts);
-router.get("/user-page", authenticate, postController.getLoggedInUserPosts);
-router.patch("/:postId", authenticate, postController.updatePost);
-router.delete("/:postId", authenticate, postController.deletePost);
+router.use(authenticate);
+
+router.post("/", postsController.createPost);
+router.get("/home-feed", postsController.getHomeFeedPosts);
+router.get("/user-page", postsController.getLoggedInUserPosts);
+router.patch("/:postId", postsController.updatePost);
+router.delete("/:postId", postsController.deletePost);
 
 export default router;

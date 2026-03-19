@@ -12,6 +12,7 @@ export default function ProtectedRoute() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          minWidth: "100vw",
           minHeight: "100vh",
         }}
       >

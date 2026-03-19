@@ -183,14 +183,17 @@ export const logout = async (req: Request, res: Response) => {
 
   if (refreshToken) {
     const secret = env.JWT_SECRET!;
-
-    const decoded = jwt.verify(refreshToken, secret) as unknown as {
-      _id: string;
-    };
-    const user = await User.findById(decoded._id);
-    if (user) {
-      user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
-      await user.save();
+    try {
+      const decoded = jwt.verify(refreshToken, secret) as unknown as {
+        _id: string;
+      };
+      const user = await User.findById(decoded._id);
+      if (user) {
+        user.refreshTokens = user.refreshTokens.filter((t) => t !== refreshToken);
+        await user.save();
+      }
+    } catch {
+      /* Empty */
     }
   }
 

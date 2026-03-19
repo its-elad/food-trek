@@ -5,7 +5,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { useAuth } from "../../contexts/AuthContext.js";
 import { uploadFile } from "../../api/filesApi.js";
-import { updateUserSchema, type UpdateUserReq } from "@food-trek/schemas";
+import { updateUserSchema, type PostData, type UpdateUserReq } from "@food-trek/schemas";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AxiosError } from "axios";
@@ -14,7 +14,7 @@ import { updateUser } from "../../api/authApi.js";
 import styles from "./user-page.module.css";
 import { useQuery } from "@tanstack/react-query";
 import { getLoggedInUserPosts } from "../../api/postsApi.js";
-import { Post } from "../../components";
+import { AddOrUpdatePostModal, Post, ViewCommentsModal } from "../../components";
 
 export const UserPage: React.FC = () => {
   const { user, setUser } = useAuth();
@@ -89,6 +89,9 @@ export const UserPage: React.FC = () => {
     enabled: !!user,
   });
 
+  const [viewCommentsModalPostId, setViewCommentsModalPostId] = useState<string | null>(null);
+  const [updatePostModalPostData, setUpdatePostModalPostData] = useState<PostData | null>(null);
+
   return (
     <div className={styles.pageContainer}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 4, mb: 5 }}>
@@ -139,7 +142,13 @@ export const UserPage: React.FC = () => {
       </Typography>
       <div className={styles.postsWrapper}>
         {loggedInUserPosts?.map((postData) => (
-          <Post key={postData._id} postData={postData} isReadOnly={false} />
+          <Post
+            key={postData._id}
+            postData={postData}
+            isReadOnly={false}
+            onViewComments={() => setViewCommentsModalPostId(postData._id)}
+            onUpdatePost={() => setUpdatePostModalPostData(postData)}
+          />
         ))}
       </div>
       <Snackbar
@@ -152,6 +161,16 @@ export const UserPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      <ViewCommentsModal
+        isModalOpen={!!viewCommentsModalPostId}
+        onClose={() => setViewCommentsModalPostId(null)}
+        postId={viewCommentsModalPostId}
+      />
+      <AddOrUpdatePostModal
+        isModalOpen={!!updatePostModalPostData}
+        onClose={() => setUpdatePostModalPostData(null)}
+        postData={updatePostModalPostData || undefined}
+      />
     </div>
   );
 };

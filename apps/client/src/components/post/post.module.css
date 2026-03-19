@@ -19,7 +19,7 @@
   padding-left: 0.5rem;
 }
 
-.iconButtons {
+.upperIconButtons {
   margin-left: auto;
   display: flex;
 }
@@ -29,7 +29,7 @@
 }
 
 .deleteIcon {
-  margin-left: 0.2rem;
+  margin-left: 0.3rem;
 }
 
 .deleteIcon:hover {
@@ -45,4 +45,31 @@
   height: 245px;
   object-fit: cover;
   align-self: center;
+}
+
+.cardContent {
+  padding: 1rem;
+}
+
+.lowerIconButtons {
+  padding-top: 1.2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.addCommentButton:hover {
+  cursor: pointer;
+}
+
+.viewCommentsButton {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.viewCommentsButton:hover {
+  cursor: pointer;
+}
+
+.disabledButton {
+  pointer-events: none;
 }
