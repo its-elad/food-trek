@@ -2,6 +2,7 @@
 
 # Server Files
 apps/api/public
+apps/api/ssl/*
 
 # Dependencies
 node_modules
