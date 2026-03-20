@@ -15,19 +15,9 @@
   grid-area: pageContainer;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  width: 100%;
   height: 100%;
-  width: 100%;
-  padding: 1rem;
-  overflow: hidden;
-}
-
-.postsWrapper {
-  display: flex;
-  flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
   gap: 1rem;
-  width: 100%;
-  max-width: 920px;
-  overflow-y: auto;
 }

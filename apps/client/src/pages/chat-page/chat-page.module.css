@@ -4,7 +4,6 @@
   grid-template-columns: 115px auto;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
 }
 
 .navbar {
@@ -14,20 +13,8 @@
 .pageContainer {
   grid-area: pageContainer;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
   height: 100%;
   width: 100%;
-  padding: 1rem;
-  overflow: hidden;
-}
-
-.postsWrapper {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  width: 100%;
-  max-width: 920px;
-  overflow-y: auto;
 }

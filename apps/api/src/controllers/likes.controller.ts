@@ -41,7 +41,7 @@ const getLoggedInUserLikeByPostId = async (req: AuthRequest, res: Response) => {
     }
 
     const foundLike = await LikeModel.findOne({ userId: req.user?._id, postId });
-    res.status(foundLike ? 200 : 404).json(foundLike);
+    res.status(200).json(foundLike);
   } catch (error) {
     console.error(error);
     res.status(500).send("error retrieving like");
