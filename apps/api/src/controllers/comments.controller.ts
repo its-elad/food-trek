@@ -40,7 +40,7 @@ const getCommentsCountByPostId = async (req: AuthRequest, res: Response) => {
       return res.status(404).send("post not found");
     }
 
-    const commentsCount = await CommentModel.countDocuments({ postId: postId });
+    const commentsCount = await CommentModel.countDocuments({ postId });
     res.status(200).json({ count: commentsCount });
   } catch (error) {
     console.error(error);

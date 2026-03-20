@@ -57,19 +57,16 @@
   gap: 1rem;
 }
 
-.addCommentButton:hover {
+.lowerIconButton:hover {
   cursor: pointer;
 }
 
-.viewCommentsButton {
+.buttonWithCount {
   display: flex;
   gap: 0.2rem;
 }
 
-.viewCommentsButton:hover {
-  cursor: pointer;
-}
-
 .disabledButton {
   pointer-events: none;
+  cursor: default !important;
 }

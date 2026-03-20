@@ -4,11 +4,13 @@ import type { PostData } from "@food-trek/schemas";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { deletePost, getLoggedInUserPosts } from "../../api/postsApi";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import CommentIcon from "@mui/icons-material/Comment";
 import AddCommentIcon from "@mui/icons-material/AddComment";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import { getCommentsCountByPostId } from "../../api/commentsApi";
+import { addLike, getLoggedInUserLikeByPostId, getLikesCountByPostId } from "../../api/likesApi";
+import { useState } from "react";
 
 interface Props {
   postData: PostData;
@@ -31,6 +33,32 @@ export const Post: React.FC<Props> = ({ postData, isReadOnly = true, onViewComme
   const { data: commentsCountObject } = useQuery({
     queryKey: getCommentsCountByPostId(postId).key,
     queryFn: getCommentsCountByPostId(postId).fn,
+  });
+
+  const { data: likesCountObject } = useQuery({
+    queryKey: getLikesCountByPostId(postId).key,
+    queryFn: getLikesCountByPostId(postId).fn,
+  });
+
+  const { data: loggedInUserLike } = useQuery({
+    queryKey: getLoggedInUserLikeByPostId(postId).key,
+    queryFn: getLoggedInUserLikeByPostId(postId).fn,
+  });
+
+  const [isOptimisticallyLiked, setIsOptimisticallyLiked] = useState(false);
+
+  const isPostLikedByUser = !!loggedInUserLike || isOptimisticallyLiked;
+
+  const { mutate: handleAddLike } = useMutation({
+    mutationKey: addLike.key,
+    mutationFn: () => addLike.fn({ postId }),
+    onMutate: () => setIsOptimisticallyLiked(true),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getLoggedInUserLikeByPostId(postId).key });
+      queryClient.invalidateQueries({ queryKey: getLikesCountByPostId(postId).key });
+    },
+    onError: () => setIsOptimisticallyLiked(false),
+    meta: { disableLoadingDefault: true },
   });
 
   return (
@@ -59,16 +87,23 @@ export const Post: React.FC<Props> = ({ postData, isReadOnly = true, onViewComme
           {postText}
         </Typography>
         <div className={styles.lowerIconButtons}>
-          <ThumbUpIcon color="action" />
+          <div className={styles.buttonWithCount}>
+            <ThumbUpIcon
+              className={`${styles.lowerIconButton} ${(isPostLikedByUser || !isReadOnly) && styles.disabledButton}`}
+              color={isPostLikedByUser ? "error" : "action"}
+              onClick={() => !isPostLikedByUser && handleAddLike()}
+            />
+            {likesCountObject?.count}
+          </div>
           <div
-            className={`${styles.viewCommentsButton} ${commentsCountObject?.count === 0 && styles.disabledButton}`}
+            className={`${styles.buttonWithCount} ${styles.lowerIconButton} ${commentsCountObject?.count === 0 && styles.disabledButton}`}
             onClick={onViewComments}
           >
             <CommentIcon color="primary" />
             {commentsCountObject?.count}
           </div>
           {isReadOnly && (
-            <div className={styles.addCommentButton}>
+            <div className={styles.lowerIconButton}>
               <AddCommentIcon color="success" onClick={onAddComment} />
             </div>
           )}

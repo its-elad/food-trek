@@ -10,6 +10,6 @@ const postSchema = new Schema(
   { versionKey: false }
 );
 
-const PostModel = model("post", postSchema);
+const PostModel = model("Post", postSchema);
 
 export default PostModel;
