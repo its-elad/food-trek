@@ -1,8 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage.js";
 import RegisterPage from "./pages/RegisterPage.js";
-import ProtectedRoute from "./pages/ProtectedRoute.js";
-import { HomeFeedPage, UserPage, ChatPage, HomePage } from "./pages";
+import { HomeFeedPage, UserPage, ChatPage, HomePage, ProtectedRoute } from "./pages";
 import { NavbarRoutesEnum } from "./types";
 
 export const App: React.FC = () => {

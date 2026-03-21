@@ -51,7 +51,7 @@ export const Post: React.FC<Props> = ({ postData, isReadOnly = true, onViewComme
 
   const { mutate: handleAddLike } = useMutation({
     mutationKey: addLike.key,
-    mutationFn: () => addLike.fn({ postId }),
+    mutationFn: addLike.fn,
     onMutate: () => setIsOptimisticallyLiked(true),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: getLoggedInUserLikeByPostId(postId).key });
@@ -91,7 +91,7 @@ export const Post: React.FC<Props> = ({ postData, isReadOnly = true, onViewComme
             <ThumbUpIcon
               className={`${styles.lowerIconButton} ${(isPostLikedByUser || !isReadOnly) && styles.disabledButton}`}
               color={isPostLikedByUser ? "error" : "action"}
-              onClick={() => !isPostLikedByUser && handleAddLike()}
+              onClick={() => !isPostLikedByUser && handleAddLike({ postId })}
             />
             {likesCountObject?.count}
           </div>

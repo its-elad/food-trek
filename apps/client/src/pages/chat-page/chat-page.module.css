@@ -1,17 +1,4 @@
-.screenContainer {
-  display: grid;
-  grid-template-areas: "navbar pageContainer";
-  grid-template-columns: 115px auto;
-  width: 100vw;
-  height: 100vh;
-}
-
-.navbar {
-  grid-area: navbar;
-}
-
 .pageContainer {
-  grid-area: pageContainer;
   display: flex;
   justify-content: center;
   align-items: center;
