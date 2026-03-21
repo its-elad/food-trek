@@ -1,9 +1,10 @@
 import { Box, Snackbar, Alert } from "@mui/material";
-import ChatBot from "../components/Chatbot";
+import ChatBot from "../../components/Chatbot";
 import { useState } from "react";
 import { showNotificationClientDef, type ShowNotificationInput } from "@food-trek/schemas";
+import styles from "./chat-page.module.css";
 
-export default function ChatPage() {
+export const ChatPage: React.FC = () => {
   const [notification, setNotification] = useState<ShowNotificationInput | null>(null);
 
   const showNotification = showNotificationClientDef.client((input) => {
@@ -12,17 +13,7 @@ export default function ChatPage() {
   });
 
   return (
-    <Box
-      sx={{
-        width: "100vw",
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        py: 6,
-        px: 30,
-      }}
-    >
+    <Box sx={{ py: 6, px: 30 }} className={styles.pageContainer}>
       <Snackbar
         open={!!notification}
         autoHideDuration={8000}
@@ -36,4 +27,4 @@ export default function ChatPage() {
       <ChatBot tools={[showNotification]} />
     </Box>
   );
-}
+};

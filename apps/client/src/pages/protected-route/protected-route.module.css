@@ -1,0 +1,29 @@
+.circularProgressContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 100vw;
+  min-height: 100vh;
+}
+
+.screenContainer {
+  display: grid;
+  grid-template-areas: "navbar pageContainer";
+  grid-template-columns: 115px auto;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.navbar {
+  grid-area: navbar;
+  width: 100%;
+  height: 100%;
+}
+
+.pageContainer {
+  grid-area: pageContainer;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}

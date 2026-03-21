@@ -1,15 +1,14 @@
 import { Schema, model } from "mongoose";
 
-const commentSchema = new Schema(
+const likeSchema = new Schema(
   {
     userId: { type: String, ref: "User", required: true },
     postId: { type: String, ref: "Post", required: true },
-    text: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
   },
   { versionKey: false }
 );
 
-const CommentModel = model("Comment", commentSchema);
+const LikeModel = model("Like", likeSchema);
 
-export default CommentModel;
+export default LikeModel;

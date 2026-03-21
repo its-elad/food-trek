@@ -123,6 +123,7 @@ export const UserPage: React.FC = () => {
               startIcon={<CancelIcon />}
               onClick={handleCancel}
               disabled={isSubmitting}
+              sx={{ textTransform: "none" }}
             >
               Cancel
             </Button>
@@ -132,6 +133,7 @@ export const UserPage: React.FC = () => {
             startIcon={isEditMode ? <SaveIcon /> : <EditIcon />}
             onClick={isEditMode ? handleSubmit(onSubmit) : handleEdit}
             disabled={isSubmitting}
+            sx={{ textTransform: "none" }}
           >
             {isEditMode ? "Save" : "Edit Profile"}
           </Button>
