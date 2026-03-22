@@ -5,12 +5,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import { createApp } from "../app.js";
 import { User } from "../models/user.model.js";
 import { RegisterReq, UserInfo } from "@food-trek/schemas";
-
-function extractCookies(res: request.Response): string[] {
-  const raw = res.headers["set-cookie"] as string | string[] | undefined;
-  if (!raw) return [];
-  return Array.isArray(raw) ? raw : [raw];
-}
+import { extractCookies } from "./utils/extract-cookies.js";
 
 const testUser = {
   username: "Dave",
@@ -52,9 +47,7 @@ describe("POST /api/auth/register", () => {
   });
 
   test("returns 400 when required fields are missing", async () => {
-    const res = await request(app)
-      .post("/api/auth/register")
-      .send({ username: "nopassword" });
+    const res = await request(app).post("/api/auth/register").send({ username: "nopassword" });
 
     expect(res.statusCode).toBe(400);
     expect(res.body).toHaveProperty("message");
@@ -138,9 +131,7 @@ describe("POST /api/auth/login", () => {
   });
 
   test("returns 400 when required fields are missing", async () => {
-    const res = await request(app)
-      .post("/api/auth/login")
-      .send({ username: "nopass" });
+    const res = await request(app).post("/api/auth/login").send({ username: "nopass" });
 
     expect(res.statusCode).toBe(400);
   });
@@ -155,9 +146,7 @@ describe("POST /api/auth/refresh", () => {
   });
 
   test("returns 200 and issues new tokens when refresh cookie is valid", async () => {
-    const res = await request(app)
-      .post("/api/auth/refresh")
-      .set("Cookie", authCookies);
+    const res = await request(app).post("/api/auth/refresh").set("Cookie", authCookies);
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty("_id");
@@ -175,38 +164,28 @@ describe("POST /api/auth/refresh", () => {
   });
 
   test("returns 401 with an invalid/tampered refresh token", async () => {
-    const res = await request(app)
-      .post("/api/auth/refresh")
-      .set("Cookie", ["refreshToken=invalid.token.value"]);
+    const res = await request(app).post("/api/auth/refresh").set("Cookie", ["refreshToken=invalid.token.value"]);
 
     expect(res.statusCode).toBe(401);
   });
 
   test("detects refresh token reuse (theft) and returns 401 on second use", async () => {
     // First refresh – valid
-    const firstRefresh = await request(app)
-      .post("/api/auth/refresh")
-      .set("Cookie", authCookies);
+    const firstRefresh = await request(app).post("/api/auth/refresh").set("Cookie", authCookies);
     expect(firstRefresh.statusCode).toBe(200);
 
     // Attempt to reuse the original (now rotated-out) refresh token
-    const secondRefresh = await request(app)
-      .post("/api/auth/refresh")
-      .set("Cookie", authCookies);
+    const secondRefresh = await request(app).post("/api/auth/refresh").set("Cookie", authCookies);
     expect(secondRefresh.statusCode).toBe(401);
   });
 
   test("new access token obtained after refresh grants access to protected route", async () => {
-    const refreshRes = await request(app)
-      .post("/api/auth/refresh")
-      .set("Cookie", authCookies);
+    const refreshRes = await request(app).post("/api/auth/refresh").set("Cookie", authCookies);
     expect(refreshRes.statusCode).toBe(200);
 
     const newCookies = extractCookies(refreshRes);
 
-    const userRes = await request(app)
-      .get("/api/auth/user")
-      .set("Cookie", newCookies);
+    const userRes = await request(app).get("/api/auth/user").set("Cookie", newCookies);
     expect(userRes.statusCode).toBe(200);
   });
 });
@@ -216,20 +195,14 @@ describe("POST /api/auth/logout", () => {
     const regRes = await request(app).post("/api/auth/register").send(testUser);
     const cookies = extractCookies(regRes);
 
-    const res = await request(app)
-      .post("/api/auth/logout")
-      .set("Cookie", cookies);
+    const res = await request(app).post("/api/auth/logout").set("Cookie", cookies);
 
     expect(res.statusCode).toBe(204);
 
     const clearedCookies = extractCookies(res);
-    const accessCookie = clearedCookies.find((c) =>
-      c.startsWith("accessToken=")
-    );
+    const accessCookie = clearedCookies.find((c) => c.startsWith("accessToken="));
     if (accessCookie) {
-      const isCleared =
-        /Max-Age=0/i.test(accessCookie) ||
-        /Expires=Thu, 01 Jan 1970/i.test(accessCookie);
+      const isCleared = /Max-Age=0/i.test(accessCookie) || /Expires=Thu, 01 Jan 1970/i.test(accessCookie);
       expect(isCleared).toBe(true);
     }
   });
@@ -255,9 +228,7 @@ describe("GET /api/auth/user", () => {
   });
 
   test("returns 200 with user info when authenticated", async () => {
-    const res = await request(app)
-      .get("/api/auth/user")
-      .set("Cookie", authCookies);
+    const res = await request(app).get("/api/auth/user").set("Cookie", authCookies);
 
     const body: UserInfo = res.body;
 
@@ -274,9 +245,7 @@ describe("GET /api/auth/user", () => {
   });
 
   test("returns 401 with a tampered access token", async () => {
-    const res = await request(app)
-      .get("/api/auth/user")
-      .set("Cookie", ["accessToken=invalid.token"]);
+    const res = await request(app).get("/api/auth/user").set("Cookie", ["accessToken=invalid.token"]);
 
     expect(res.statusCode).toBe(401);
   });
@@ -311,10 +280,7 @@ describe("PATCH /api/auth/user", () => {
   });
 
   test("returns 400 when no fields are provided", async () => {
-    const res = await request(app)
-      .patch("/api/auth/user")
-      .set("Cookie", authCookies)
-      .send({});
+    const res = await request(app).patch("/api/auth/user").set("Cookie", authCookies).send({});
 
     expect(res.statusCode).toBe(400);
     expect(res.body).toHaveProperty("message");
@@ -328,18 +294,13 @@ describe("PATCH /api/auth/user", () => {
       password: "password",
     });
 
-    const res = await request(app)
-      .patch("/api/auth/user")
-      .set("Cookie", authCookies)
-      .send({ username: "claryFray" });
+    const res = await request(app).patch("/api/auth/user").set("Cookie", authCookies).send({ username: "claryFray" });
 
     expect(res.statusCode).toBe(409);
   });
 
   test("returns 401 when not authenticated", async () => {
-    const res = await request(app)
-      .patch("/api/auth/user")
-      .send({ username: "hacker" });
+    const res = await request(app).patch("/api/auth/user").send({ username: "hacker" });
 
     expect(res.statusCode).toBe(401);
   });
