@@ -3,6 +3,7 @@ import PostModel from "../models/post.model.js";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import { newPostDataSchema, updatePostDataSchema } from "@food-trek/schemas";
 import CommentModel from "../models/comment.model.js";
+import LikeModel from "../models/like.model.js";
 
 const createPost = async (req: AuthRequest, res: Response) => {
   const parsedBody = newPostDataSchema.safeParse(req.body);
@@ -102,8 +103,9 @@ const deletePost = async (req: AuthRequest, res: Response) => {
 
     const { deletedCount: postsDeletedCount } = await postToDelete.deleteOne();
     const { deletedCount: commentsDeletedCount } = await CommentModel.deleteMany({ postId });
+    const { deletedCount: likesDeletedCount } = await LikeModel.deleteMany({ postId });
 
-    res.status(200).json({ postsDeletedCount, commentsDeletedCount });
+    res.status(200).json({ postsDeletedCount, commentsDeletedCount, likesDeletedCount });
   } catch (error) {
     console.error(error);
     res.status(500).send("error deleting post");

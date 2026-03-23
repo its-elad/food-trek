@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Divider,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
+import { Box, Button, Divider, TextField, Typography, Alert, CircularProgress } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.js";
 import { GoogleLogin } from "@react-oauth/google";
@@ -15,7 +7,7 @@ import { loginSchema, type LoginReq } from "@food-trek/schemas";
 import { AxiosError } from "axios";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { googleLogin, loginUser } from "../api/authApi.js";
 
 export default function LoginPage() {
@@ -50,25 +42,24 @@ export default function LoginPage() {
 
   const [serverError, setServerError] = useState("");
 
+  const queryClient = useQueryClient();
+
   const onSubmit = async (data: LoginReq) => {
     setServerError("");
     try {
       await loginMutation.mutateAsync(data);
+      await queryClient.invalidateQueries();
       navigate("/");
     } catch (err: unknown) {
-      setServerError(
-        (err instanceof AxiosError && err.response?.data?.message) ||
-          "Login failed"
-      );
+      setServerError((err instanceof AxiosError && err.response?.data?.message) || "Login failed");
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: {
-    credential?: string;
-  }) => {
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
     if (!credentialResponse.credential) return;
     try {
       await loginWithGoogleMutation.mutateAsync(credentialResponse.credential);
+      await queryClient.invalidateQueries();
       navigate("/");
     } catch {
       setServerError("Google sign-in failed");
@@ -130,9 +121,7 @@ export default function LoginPage() {
           variant="contained"
           size="large"
           disabled={isSubmitting}
-          startIcon={
-            isSubmitting && <CircularProgress size={18} color="inherit" />
-          }
+          startIcon={isSubmitting && <CircularProgress size={18} color="inherit" />}
         >
           Sign In
         </Button>

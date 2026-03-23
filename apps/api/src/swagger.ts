@@ -8,10 +8,22 @@ import {
   uploadFileResSchema,
   googleLoginSchema,
   errorResSchema,
+  newPostDataSchema,
+  postDataSchema,
+  updatePostDataSchema,
+  newCommentDataSchema,
+  commentsCountSchema,
+  commentDataSchema,
+  newLikeDataSchema,
+  likesCountSchema,
+  likeDataSchema,
 } from "@food-trek/schemas";
 
 const AuthTag = "Auth";
 const FilesTag = "Files";
+const PostsTag = "Posts";
+const CommentsTag = "Comments";
+const LikesTag = "Likes";
 
 const commonResponses = {
   400: {
@@ -29,16 +41,13 @@ const commonResponses = {
 } as const;
 const INTERNAL_SERVER_ERROR_RESPONSE = { 500: commonResponses[500] } as const;
 
-export function generateOpenAPIDocument(
-  serverUrl: string
-): ReturnType<typeof createDocument> {
+export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof createDocument> {
   return createDocument({
     openapi: "3.1.0",
     info: {
       title: "FoodTrek API",
       version: "1.0.0",
-      description:
-        "REST API for FoodTrek",
+      description: "REST API for FoodTrek",
     },
     servers: [{ url: serverUrl }],
     components: {
@@ -211,6 +220,314 @@ export function generateOpenAPIDocument(
             },
             400: commonResponses[400],
             ...INTERNAL_SERVER_ERROR_RESPONSE,
+          },
+        },
+      },
+
+      "/api/posts": {
+        post: {
+          tags: [PostsTag],
+          summary: "Create a new post",
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: newPostDataSchema } },
+          },
+          responses: {
+            201: {
+              description: "Post created successfully",
+              content: {
+                "application/json": {
+                  schema: newPostDataSchema.extend({ _id: z.string(), userId: z.string(), createdAt: z.date() }),
+                },
+              },
+            },
+            400: {
+              description: "Validation error",
+              content: { "text/plain": { schema: { type: "string", example: "image-url and text are required" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error creating post" } } },
+            },
+          },
+        },
+      },
+
+      "/api/posts/home-feed": {
+        get: {
+          tags: [PostsTag],
+          summary: "Get home feed posts",
+          responses: {
+            200: {
+              description: "Posts retrieved successfully",
+              content: { "application/json": { schema: z.array(postDataSchema) } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error retrieving posts" } } },
+            },
+          },
+        },
+      },
+
+      "/api/posts/user-page": {
+        get: {
+          tags: [PostsTag],
+          summary: "Get user page posts",
+          responses: {
+            200: {
+              description: "Posts retrieved successfully",
+              content: { "application/json": { schema: z.array(postDataSchema) } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error retrieving posts" } } },
+            },
+          },
+        },
+      },
+
+      "/api/posts/{postId}": {
+        patch: {
+          tags: [PostsTag],
+          summary: "Update an existing post",
+          parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: updatePostDataSchema } },
+          },
+          responses: {
+            200: {
+              description: "Post updated successfully",
+              content: {
+                "application/json": {
+                  schema: newPostDataSchema.extend({ _id: z.string(), userId: z.string(), createdAt: z.date() }),
+                },
+              },
+            },
+            400: {
+              description: "Validation error",
+              content: {
+                "text/plain": { schema: { type: "string", example: "post-id is required / invalid update data" } },
+              },
+            },
+            403: {
+              description: "Not authorized",
+              content: { "text/plain": { schema: { type: "string", example: "not authorized" } } },
+            },
+            404: {
+              description: "Post not found",
+              content: { "text/plain": { schema: { type: "string", example: "post not found" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error updating post" } } },
+            },
+          },
+        },
+        delete: {
+          tags: [PostsTag],
+          summary: "Delete an existing post",
+          parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
+          responses: {
+            200: {
+              description: "Post deleted successfully",
+              content: {
+                "application/json": {
+                  schema: z.object({
+                    postsDeletedCount: z.number(),
+                    commentsDeletedCount: z.number(),
+                    likesDeletedCount: z.number(),
+                  }),
+                },
+              },
+            },
+            400: {
+              description: "Validation error",
+              content: { "text/plain": { schema: { type: "string", example: "post-id is required" } } },
+            },
+            403: {
+              description: "Not authorized",
+              content: { "text/plain": { schema: { type: "string", example: "not authorized" } } },
+            },
+            404: {
+              description: "Post not found",
+              content: { "text/plain": { schema: { type: "string", example: "post not found" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error deleting post" } } },
+            },
+          },
+        },
+      },
+
+      "/api/comments": {
+        post: {
+          tags: [CommentsTag],
+          summary: "Add a new comment",
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: newCommentDataSchema } },
+          },
+          responses: {
+            201: {
+              description: "Comment created successfully",
+              content: {
+                "application/json": {
+                  schema: newCommentDataSchema.extend({ _id: z.string(), userId: z.string(), createdAt: z.date() }),
+                },
+              },
+            },
+            400: {
+              description: "Validation error",
+              content: { "text/plain": { schema: { type: "string", example: "post-id and text are required" } } },
+            },
+            404: {
+              description: "Post not found",
+              content: { "text/plain": { schema: { type: "string", example: "post not found" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error creating comment" } } },
+            },
+          },
+        },
+      },
+
+      "/api/comments/post/{postId}/count": {
+        get: {
+          tags: [CommentsTag],
+          summary: "Get comment count of a specific post",
+          parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
+          responses: {
+            200: {
+              description: "Comments count retrieved successfully",
+              content: { "application/json": { schema: commentsCountSchema } },
+            },
+            400: {
+              description: "Validation error",
+              content: { "text/plain": { schema: { type: "string", example: "post-id is required" } } },
+            },
+            404: {
+              description: "Post not found",
+              content: { "text/plain": { schema: { type: "string", example: "post not found" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error retrieving comments count" } } },
+            },
+          },
+        },
+      },
+
+      "/api/comments/post/{postId}": {
+        get: {
+          tags: [CommentsTag],
+          summary: "Get comments of a specific post",
+          parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
+          responses: {
+            200: {
+              description: "Comments retrieved successfully",
+              content: { "application/json": { schema: z.array(commentDataSchema) } },
+            },
+            400: {
+              description: "Validation error",
+              content: { "text/plain": { schema: { type: "string", example: "post-id is required" } } },
+            },
+            404: {
+              description: "Post not found",
+              content: { "text/plain": { schema: { type: "string", example: "post not found" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error retrieving comments" } } },
+            },
+          },
+        },
+      },
+
+      "/api/likes": {
+        post: {
+          tags: [LikesTag],
+          summary: "Add a new like",
+          requestBody: {
+            required: true,
+            content: { "application/json": { schema: newLikeDataSchema } },
+          },
+          responses: {
+            201: {
+              description: "Like created successfully",
+              content: {
+                "application/json": {
+                  schema: newLikeDataSchema.extend({ _id: z.string(), userId: z.string(), createdAt: z.date() }),
+                },
+              },
+            },
+            400: {
+              description: "Validation error",
+              content: { "text/plain": { schema: { type: "string", example: "post-id is required" } } },
+            },
+            404: {
+              description: "Post not found",
+              content: { "text/plain": { schema: { type: "string", example: "post not found" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error adding like" } } },
+            },
+          },
+        },
+      },
+
+      "/api/likes/logged-in-user/post/{postId}": {
+        get: {
+          tags: [LikesTag],
+          summary: "Get the logged-in user's like on a specific post",
+          parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
+          responses: {
+            200: {
+              description: "Like retrieved successfully",
+              content: { "application/json": { schema: likeDataSchema } },
+            },
+            400: {
+              description: "Validation error",
+              content: { "text/plain": { schema: { type: "string", example: "post-id is required" } } },
+            },
+            404: {
+              description: "Post not found",
+              content: { "text/plain": { schema: { type: "string", example: "post not found" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error retrieving like" } } },
+            },
+          },
+        },
+      },
+
+      "/api/likes/post/{postId}/count": {
+        get: {
+          tags: [LikesTag],
+          summary: "Get like count of a specific post",
+          parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
+          responses: {
+            200: {
+              description: "Likes count retrieved successfully",
+              content: { "application/json": { schema: likesCountSchema } },
+            },
+            400: {
+              description: "Validation error",
+              content: { "text/plain": { schema: { type: "string", example: "post-id is required" } } },
+            },
+            404: {
+              description: "Post not found",
+              content: { "text/plain": { schema: { type: "string", example: "post not found" } } },
+            },
+            500: {
+              description: "Internal server error",
+              content: { "text/plain": { schema: { type: "string", example: "error retrieving likes count" } } },
+            },
           },
         },
       },

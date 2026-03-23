@@ -32,10 +32,7 @@ export const AddOrUpdatePostModal: React.FC<Props> = ({ isModalOpen, onClose, po
   const handleOnClose = () => {
     onClose();
     setPostImageFile(null);
-
-    if (isUpdateMode) {
-      queryClient.invalidateQueries({ queryKey: getLoggedInUserPosts.key });
-    }
+    queryClient.invalidateQueries({ queryKey: getLoggedInUserPosts.key });
   };
 
   const isSaveButtonDisabledInUpdateMode = (!postImageFile && postText === postData?.text) || postText === "";
