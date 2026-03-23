@@ -67,6 +67,16 @@ describe("Posts Controller", () => {
       expect(res.body.length).toBe(1);
       expect(res.body[0].userId._id).toBe(anotherUserId);
     });
+
+    test("returns post without user data if the user no longer exists in the database", async () => {
+      await PostModel.create({ ...newPostData, userId: new mongoose.Types.ObjectId().toString() });
+
+      const res = await request(app).get("/api/posts/home-feed").set("Cookie", authCookies);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body[0]).toBeDefined();
+      expect(res.body[0].userId).toBeNull();
+    });
   });
 
   describe("GET /api/posts/user-page", () => {

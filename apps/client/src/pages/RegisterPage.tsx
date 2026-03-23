@@ -1,13 +1,5 @@
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Divider,
-  TextField,
-  Typography,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
+import { Box, Button, Divider, TextField, Typography, Alert, CircularProgress } from "@mui/material";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext.js";
 import { GoogleLogin } from "@react-oauth/google";
@@ -18,6 +10,7 @@ import { z } from "zod";
 import { uploadFile } from "../api/filesApi.js";
 import { UploadUserAvatar } from "../components/UploadUserAvatar.js";
 import { googleLogin, registerUser } from "../api/authApi.js";
+import { useQueryClient } from "@tanstack/react-query";
 
 const registerFormSchema = registerSchema
   .extend({ confirmPassword: z.string() })
@@ -43,10 +36,9 @@ export default function RegisterPage() {
     resolver: zodResolver(registerFormSchema),
   });
 
-  const onSubmit = async ({
-    confirmPassword: _,
-    ...data
-  }: RegisterFormData) => {
+  const queryClient = useQueryClient();
+
+  const onSubmit = async ({ confirmPassword: _, ...data }: RegisterFormData) => {
     setServerError("");
     try {
       let user: UserInfo;
@@ -57,22 +49,21 @@ export default function RegisterPage() {
         user = await registerUser.fn(data);
       }
       if (user) setUser(user);
+      await queryClient.invalidateQueries();
       navigate("/");
     } catch (err: unknown) {
       const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Registration failed";
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Registration failed";
       setServerError(msg);
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: {
-    credential?: string;
-  }) => {
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
     if (!credentialResponse.credential) return;
     try {
       const user = await googleLogin.fn(credentialResponse.credential);
       setUser(user);
+      await queryClient.invalidateQueries();
       navigate("/");
     } catch {
       setServerError("Google sign-in failed");
@@ -111,11 +102,7 @@ export default function RegisterPage() {
 
         {serverError && <Alert severity="error">{serverError}</Alert>}
 
-        <UploadUserAvatar
-          img={imgFile}
-          onClick={setImgFile}
-          isEditMode={true}
-        />
+        <UploadUserAvatar img={imgFile} onClick={setImgFile} isEditMode={true} />
 
         <TextField
           label="Username"
@@ -158,9 +145,7 @@ export default function RegisterPage() {
           variant="contained"
           size="large"
           disabled={isSubmitting}
-          startIcon={
-            isSubmitting && <CircularProgress size={18} color="inherit" />
-          }
+          startIcon={isSubmitting && <CircularProgress size={18} color="inherit" />}
         >
           Register
         </Button>

@@ -128,5 +128,20 @@ describe("Comments Controller", () => {
       expect(res.body[0].text).toBe("This is a new comment.");
       expect(res.body[1].text).toBe("This is an old comment");
     });
+
+    test("returns comment without user data if the user no longer exists in the database", async () => {
+      await CommentModel.create({
+        postId,
+        userId: new mongoose.Types.ObjectId().toString(),
+        text: "This is my comment.",
+      });
+
+      const res = await request(app).get(`/api/comments/post/${postId}`).set("Cookie", authCookies);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].text).toBe("This is my comment.");
+      expect(res.body[0].userId).toBeNull();
+    });
   });
 });
