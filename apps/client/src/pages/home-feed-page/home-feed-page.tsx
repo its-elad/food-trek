@@ -1,23 +1,42 @@
 import { useQuery } from "@tanstack/react-query";
 import { getHomeFeedPosts } from "../../api/postsApi";
-import { Button } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import styles from "./home-feed-page.module.css";
 import { useState } from "react";
 import { Post, AddOrUpdatePostModal, ViewCommentsModal, AddCommentModal } from "../../components";
 
 export const HomeFeedPage: React.FC = () => {
-  const { data: homeFeedPosts } = useQuery({
-    queryKey: getHomeFeedPosts.key,
-    queryFn: getHomeFeedPosts.fn,
-  });
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [viewCommentsModalPostId, setViewCommentsModalPostId] = useState<string | null>(null);
   const [addCommentModalPostId, setAddCommentModalPostId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string | null>(null);
+
+  const { data: homeFeedPosts } = useQuery({
+    queryKey: getHomeFeedPosts(searchQuery).key,
+    queryFn: getHomeFeedPosts(searchQuery).fn,
+  });
 
   return (
     <div className={styles.pageContainer}>
+      <form
+        className={styles.searchContainer}
+        onSubmit={(event) => {
+          event.preventDefault();
+          setSearchQuery(event.target?.search?.value?.trim() || null);
+        }}
+      >
+        <TextField
+          name="search"
+          placeholder="Search posts..."
+          variant="outlined"
+          size="small"
+          fullWidth
+          sx={{ maxWidth: "300px" }}
+        />
+        <Button type="submit" variant="contained" sx={{ textTransform: "none" }}>
+          Search
+        </Button>
+      </form>
       <div className={styles.homeFeedPosts}>
         {homeFeedPosts &&
           homeFeedPosts.map((postData) => (

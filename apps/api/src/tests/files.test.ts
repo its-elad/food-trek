@@ -8,23 +8,31 @@ import { createApp } from "../app.js";
 
 let app: Express;
 let mongod: MongoMemoryServer;
+let initialFiles: Set<string>;
 
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
   app = createApp();
+
+  const uploadsDir = path.join(process.cwd(), "public");
+  initialFiles = new Set();
+  if (fs.existsSync(uploadsDir)) {
+    const files = fs.readdirSync(uploadsDir);
+    files.forEach((file) => initialFiles.add(file));
+  }
 });
 
 afterAll(async () => {
   await mongoose.disconnect();
   await mongod.stop();
 
-  // Clean up any uploaded files created during tests
+  // Clean up only files uploaded during tests
   const uploadsDir = path.join(process.cwd(), "public");
   if (fs.existsSync(uploadsDir)) {
     const files = fs.readdirSync(uploadsDir);
     for (const file of files) {
-      if (/^\d+\.(png|jpg|jpeg|gif|webp)$/i.test(file.toLowerCase())) {
+      if (!initialFiles.has(file)) {
         fs.unlinkSync(path.join(uploadsDir, file));
       }
     }

@@ -46,6 +46,7 @@ const searchPostsFunc = async ({ query, limit }: SearchPostsInput): Promise<Sear
   }[] = await PostModel.aggregate([
     { $match: { $text: { $search: normalizedQuery } } },
     { $addFields: { score: { $meta: "textScore" } } },
+    { $sort: { score: -1, createdAt: -1 } },
     {
       $lookup: {
         from: "users",
@@ -74,7 +75,6 @@ const searchPostsFunc = async ({ query, limit }: SearchPostsInput): Promise<Sear
         authorDoc: { $arrayElemAt: ["$authorDoc", 0] },
       },
     },
-    { $sort: { score: -1, createdAt: -1 } },
     { $limit: limit },
     {
       $project: {

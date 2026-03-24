@@ -1,10 +1,13 @@
 import type { NewPostData, PostData, UpdatePostData } from "@food-trek/schemas";
 import { baseApi } from "./baseApi";
 
-export const getHomeFeedPosts = {
-  fn: () => baseApi.get<PostData[]>("/posts/home-feed").then((response) => response.data),
-  key: ["posts", "home-feed"] as const,
-};
+export const getHomeFeedPosts = (search?: string | null) => ({
+  fn: () =>
+    baseApi
+      .get<PostData[]>("/posts/home-feed", search ? { params: { search } } : undefined)
+      .then((response) => response.data),
+  key: ["posts", "home-feed", search] as const,
+});
 
 export const createNewPost = {
   fn: (newPostData: NewPostData) => baseApi.post("/posts", newPostData).then((response) => response.data),

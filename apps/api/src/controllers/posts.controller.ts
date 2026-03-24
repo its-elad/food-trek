@@ -1,9 +1,10 @@
 import { Response } from "express";
 import PostModel from "../models/post.model.js";
 import { AuthRequest } from "../middleware/auth.middleware.js";
-import { newPostDataSchema, updatePostDataSchema } from "@food-trek/schemas";
+import { newPostDataSchema, PostData, updatePostDataSchema } from "@food-trek/schemas";
 import CommentModel from "../models/comment.model.js";
 import LikeModel from "../models/like.model.js";
+import { PipelineStage } from "mongoose";
 
 const createPost = async (req: AuthRequest, res: Response) => {
   const parsedBody = newPostDataSchema.safeParse(req.body);
@@ -22,11 +23,39 @@ const createPost = async (req: AuthRequest, res: Response) => {
 };
 
 const getHomeFeedPosts = async (req: AuthRequest, res: Response) => {
+  if (req.query.search && typeof req.query.search !== "string") {
+    return res.status(400).send("search query must be a string");
+  }
+  const search = req.query.search as string | undefined;
+  const normalizedQuery = search?.toLowerCase().replace(/\s+/g, " ").trim();
+
   try {
-    const homeFeedPosts = await PostModel.find({ userId: { $ne: req.user?._id } })
-      .populate("userId", "username imgUrl")
-      .sort({ createdAt: -1 })
-      .exec();
+    const matchStage: PipelineStage = { $match: { userId: { $ne: req.user?._id } } };
+    const sortingStages: PipelineStage[] = [];
+    if (normalizedQuery) {
+      matchStage.$match.$text = { $search: normalizedQuery };
+      sortingStages.push({ $addFields: { score: { $meta: "textScore" } } }, { $sort: { score: -1, createdAt: -1 } });
+    } else {
+      sortingStages.push({ $sort: { createdAt: -1 } });
+    }
+    const homeFeedPosts: PostData[] = await PostModel.aggregate([
+      matchStage,
+      ...sortingStages,
+      { $unset: ["score"] },
+      {
+        $lookup: {
+          from: "users",
+          let: { postUserId: "$userId" },
+          pipeline: [
+            { $match: { $expr: { $eq: [{ $toString: "$_id" }, "$$postUserId"] } } },
+            { $project: { username: 1, imgUrl: 1 } },
+          ],
+          as: "userId",
+        },
+      },
+      { $unwind: { path: "$userId", preserveNullAndEmptyArrays: true } },
+      { $set: { userId: { $ifNull: ["$userId", null] } } },
+    ]).exec();
 
     res.status(200).json(homeFeedPosts);
   } catch (error) {
