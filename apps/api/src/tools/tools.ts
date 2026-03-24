@@ -1,13 +1,6 @@
-import {
-  getCurrentTimeServerDef,
-  PostData,
-  SearchPostsInput,
-  SearchPostsOutput,
-  searchPostsServerDef,
-} from "@food-trek/schemas";
-import PostModel from "../models/post.model.js";
-import { ObjectId } from "mongoose";
+import { getCurrentTimeServerDef, SearchPostsInput, SearchPostsOutput, searchPostsServerDef } from "@food-trek/schemas";
 import { encode } from "@toon-format/toon";
+import { searchPostsBySemanticSimilarity } from "./rag.js";
 
 export const getCurrentTime = getCurrentTimeServerDef.server(async () => {
   const now = new Date();
@@ -32,82 +25,7 @@ export const getCurrentTime = getCurrentTimeServerDef.server(async () => {
 const searchPostsFunc = async ({ query, limit }: SearchPostsInput): Promise<SearchPostsOutput> => {
   const normalizedQuery = query.toLowerCase().replace(/\s+/g, " ").trim();
 
-  const matches: {
-    _id: ObjectId;
-    text: string;
-    imageUrl: string;
-    createdAt: Date | string;
-    score?: number;
-    author: {
-      _id: string;
-      username: string;
-      imgUrl: string;
-    };
-  }[] = await PostModel.aggregate([
-    { $match: { $text: { $search: normalizedQuery } } },
-    { $addFields: { score: { $meta: "textScore" } } },
-    { $sort: { score: -1, createdAt: -1 } },
-    {
-      $lookup: {
-        from: "users",
-        let: { postUserId: "$userId" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $or: [{ $eq: ["$_id", { $toObjectId: "$$postUserId" }] }],
-              },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              username: 1,
-              imgUrl: 1,
-            },
-          },
-        ],
-        as: "authorDoc",
-      },
-    },
-    {
-      $addFields: {
-        authorDoc: { $arrayElemAt: ["$authorDoc", 0] },
-      },
-    },
-    { $limit: limit },
-    {
-      $project: {
-        _id: 1,
-        text: 1,
-        imageUrl: 1,
-        createdAt: 1,
-        score: 1,
-        author: {
-          _id: {
-            $ifNull: [{ $toString: "$authorDoc._id" }, "$userId"],
-          },
-          username: {
-            $ifNull: ["$authorDoc.username", "--unknown--"],
-          },
-          imgUrl: {
-            $ifNull: ["$authorDoc.imgUrl", ""],
-          },
-        },
-      },
-    },
-  ]).exec();
-
-  const data = encode(
-    matches.map<Omit<PostData, "createdAt"> & { score: number; createdAt: string }>((post) => ({
-      _id: String(post._id),
-      text: post.text,
-      imageUrl: post.imageUrl,
-      createdAt: new Date(post.createdAt).toString(),
-      userId: post.author,
-      score: post.score ?? 0,
-    }))
-  );
+  const data = encode((await searchPostsBySemanticSimilarity(normalizedQuery)).slice(0, limit));
   return { posts: data };
 };
 

@@ -177,7 +177,7 @@ export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: 
   const chatOptions = useMemo(
     () =>
       createChatClientOptions({
-        connection: fetchServerSentEvents(`${import.meta.env.VITE_API_URL}/chat`),
+        connection: fetchServerSentEvents(`${import.meta.env.VITE_API_URL}/chat`, { credentials: "include" }),
         tools: tools ? clientTools(...tools) : undefined,
       }),
     [tools]

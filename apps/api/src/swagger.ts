@@ -257,6 +257,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         get: {
           tags: [PostsTag],
           summary: "Get home feed posts",
+          parameters: [{ name: "search", in: "query", required: false, schema: { type: "string" } }],
           responses: {
             200: {
               description: "Posts retrieved successfully",
@@ -283,6 +284,30 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
               description: "Internal server error",
               content: { "text/plain": { schema: { type: "string", example: "error retrieving posts" } } },
             },
+          },
+        },
+      },
+
+      "/api/posts/embedding-batch/update-all": {
+        post: {
+          tags: [PostsTag],
+          summary: "Batch update embeddings for all stale or missing posts",
+          security: [{ cookieAuth: [] }],
+          responses: {
+            200: {
+              description: "Batch update completed",
+              content: {
+                "application/json": {
+                  schema: z.object({
+                    success: z.boolean(),
+                    message: z.string(),
+                    updated: z.number(),
+                    failed: z.number(),
+                  }),
+                },
+              },
+            },
+            ...INTERNAL_SERVER_ERROR_RESPONSE,
           },
         },
       },

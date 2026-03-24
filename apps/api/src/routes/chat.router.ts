@@ -5,8 +5,10 @@ import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { Router, Request, Response } from "express";
 import { getCurrentTime, searchPosts } from "../tools/tools.js";
 import { env } from "../env.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 export const chatRouter = Router();
+chatRouter.use(authenticate);
 
 chatRouter.post("/", async (req: Request, res: Response) => {
   const { messages, data } = req.body;

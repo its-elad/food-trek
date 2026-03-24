@@ -5,6 +5,8 @@ import { newPostDataSchema, PostData, updatePostDataSchema } from "@food-trek/sc
 import CommentModel from "../models/comment.model.js";
 import LikeModel from "../models/like.model.js";
 import { PipelineStage } from "mongoose";
+import { checkAndUpdatePostEmbedding, searchPostsBySemanticSimilarity, updateAllPostEmbeddings } from "../tools/rag.js";
+import PostEmbeddingModel from "../models/postEmbedding.model.js";
 
 const createPost = async (req: AuthRequest, res: Response) => {
   const parsedBody = newPostDataSchema.safeParse(req.body);
@@ -15,6 +17,12 @@ const createPost = async (req: AuthRequest, res: Response) => {
 
   try {
     const createdPost = await PostModel.create({ ...parsedBody.data, userId: req.user?._id });
+
+    const postId = createdPost._id.toString();
+    checkAndUpdatePostEmbedding(postId).catch((error) => {
+      console.error(`Failed to create embedding for post ${postId}:`, error);
+    });
+
     res.status(201).json(createdPost);
   } catch (error) {
     console.error(error);
@@ -27,8 +35,17 @@ const getHomeFeedPosts = async (req: AuthRequest, res: Response) => {
     return res.status(400).send("search query must be a string");
   }
   const search = req.query.search as string | undefined;
-  const normalizedQuery = search?.toLowerCase().replace(/\s+/g, " ").trim();
 
+  const normalizedQuery = search?.trim();
+
+  if (search) {
+    try {
+      const homeFeedPosts: PostData[] = await searchPostsBySemanticSimilarity(search);
+      return res.status(200).json(homeFeedPosts);
+    } catch (error) {
+      console.warn("Error searching posts by semantic similarity:", error);
+    }
+  }
   try {
     const matchStage: PipelineStage = { $match: { userId: { $ne: req.user?._id } } };
     const sortingStages: PipelineStage[] = [];
@@ -81,8 +98,8 @@ const getLoggedInUserPosts = async (req: AuthRequest, res: Response) => {
 const updatePost = async (req: AuthRequest, res: Response) => {
   const postId = req.params.postId;
 
-  if (!postId) {
-    return res.status(400).send("post-id is required");
+  if (!postId || typeof postId !== "string") {
+    return res.status(400).send("post-id is required and should not be an array");
   }
 
   const parsedBody = updatePostDataSchema.safeParse(req.body);
@@ -105,6 +122,13 @@ const updatePost = async (req: AuthRequest, res: Response) => {
     postToUpdate.set(parsedBody.data);
     const updatedPost = await postToUpdate.save();
 
+    // Trigger async embedding update if text was changed
+    if (parsedBody.data.text) {
+      checkAndUpdatePostEmbedding(postId).catch((error) => {
+        console.error(`Failed to update embedding for post ${postId}:`, error);
+      });
+    }
+
     res.status(200).json(updatedPost);
   } catch (error) {
     console.error(error);
@@ -115,8 +139,8 @@ const updatePost = async (req: AuthRequest, res: Response) => {
 const deletePost = async (req: AuthRequest, res: Response) => {
   const postId = req.params.postId;
 
-  if (!postId) {
-    return res.status(400).send("post-id is required");
+  if (!postId || typeof postId !== "string") {
+    return res.status(400).send("post-id is required and should not be an array");
   }
 
   try {
@@ -134,6 +158,11 @@ const deletePost = async (req: AuthRequest, res: Response) => {
     const { deletedCount: commentsDeletedCount } = await CommentModel.deleteMany({ postId });
     const { deletedCount: likesDeletedCount } = await LikeModel.deleteMany({ postId });
 
+    // Clean up embedding data asynchronously
+    PostEmbeddingModel.deleteOne({ postId }).catch((error) => {
+      console.error(`Failed to delete embedding for post ${postId}:`, error);
+    });
+
     res.status(200).json({ postsDeletedCount, commentsDeletedCount, likesDeletedCount });
   } catch (error) {
     console.error(error);
@@ -141,4 +170,26 @@ const deletePost = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export default { createPost, getHomeFeedPosts, getLoggedInUserPosts, updatePost, deletePost };
+const updateAllEmbeddings = async (_req: AuthRequest, res: Response) => {
+  try {
+    const result = await updateAllPostEmbeddings();
+    res.status(200).json({
+      success: true,
+      message: "Batch update completed",
+      updated: result.updated,
+      failed: result.failed,
+    });
+  } catch (error) {
+    console.error("Error batch updating embeddings:", error);
+    res.status(500).send("error batch updating embeddings");
+  }
+};
+
+export default {
+  createPost,
+  getHomeFeedPosts,
+  getLoggedInUserPosts,
+  updatePost,
+  deletePost,
+  updateAllEmbeddings,
+};
