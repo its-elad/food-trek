@@ -10,6 +10,9 @@ const postSchema = new Schema(
   { versionKey: false }
 );
 
+postSchema.index({ text: "text" });
+postSchema.index({ createdAt: -1 });
+
 const PostModel = model("Post", postSchema);
 
 export default PostModel;

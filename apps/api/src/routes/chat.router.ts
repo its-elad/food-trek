@@ -3,7 +3,7 @@ import { Readable } from "stream";
 import { showNotificationClientDef } from "@food-trek/schemas";
 import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { Router, Request, Response } from "express";
-import { getCurrentTime } from "../tools/tools.js";
+import { getCurrentTime, searchPosts } from "../tools/tools.js";
 import { env } from "../env.js";
 
 export const chatRouter = Router();
@@ -30,7 +30,17 @@ chatRouter.post("/", async (req: Request, res: Response) => {
       messages: modelMessages as never,
       stream: true,
       conversationId,
-      tools: [getCurrentTime, showNotificationClientDef],
+      systemPrompts: [
+        `
+        You are a helpful assistant for a food discovery app called FoodTrek.
+        Users can ask you to find dishes, ingredients, restaurants, and travel tips related to food.
+        You should search recent public posts from other users to find relevant information.
+        Always try to help the user with their food-related questions and requests.
+        If an Error occurs when running a tool, catch it and show a user-friendly message.
+        Without running the tool again
+        `,
+      ],
+      tools: [getCurrentTime, searchPosts, showNotificationClientDef],
     });
 
     const sseStream = toServerSentEventsStream(chatStream);
