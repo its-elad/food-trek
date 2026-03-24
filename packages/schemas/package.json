@@ -25,7 +25,7 @@
     "tsup": "^8.3.5"
   },
   "dependencies": {
-    "@tanstack/ai": "^0.6.1",
-    "zod": "^4.3.5"
+    "@tanstack/ai": "^0.8.1",
+    "zod": "^4.3.6"
   }
 }

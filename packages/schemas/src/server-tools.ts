@@ -1,4 +1,4 @@
-import { InferSchemaType, toolDefinition } from "@tanstack/ai";
+import { toolDefinition } from "@tanstack/ai";
 import z from "zod";
 
 export const getCurrentTimeServerDef = toolDefinition({
@@ -18,12 +18,14 @@ const searchPostsInputSchema = z.object({
   limit: z.number().int().min(1).max(10).default(5).describe("Maximum number of matching posts to return"),
 });
 export type SearchPostsInput = z.infer<typeof searchPostsInputSchema>;
+const searchPostsOutputSchema = z.object({
+  posts: z.string().describe("A Toon encoded JSON string containing an array of matching posts."),
+});
+export type SearchPostsOutput = z.infer<typeof searchPostsOutputSchema>;
 export const searchPostsServerDef = toolDefinition({
   name: "search_posts",
   description:
     "Search public posts by free text using MongoDB text search relevance. Use this when the user asks to find posts about a topic, ingredient, place, or phrase.",
   inputSchema: searchPostsInputSchema,
-  outputSchema: z.object({
-    posts: z.string(),
-  }),
+  outputSchema: searchPostsOutputSchema,
 });

@@ -1,4 +1,10 @@
-import { getCurrentTimeServerDef, PostData, SearchPostsInput, searchPostsServerDef } from "@food-trek/schemas";
+import {
+  getCurrentTimeServerDef,
+  PostData,
+  SearchPostsInput,
+  SearchPostsOutput,
+  searchPostsServerDef,
+} from "@food-trek/schemas";
 import PostModel from "../models/post.model.js";
 import { ObjectId } from "mongoose";
 import { encode } from "@toon-format/toon";
@@ -23,8 +29,7 @@ export const getCurrentTime = getCurrentTimeServerDef.server(async () => {
   };
 });
 
-const searchPostsFunc = async (args: unknown) => {
-  const { query, limit } = args as SearchPostsInput;
+const searchPostsFunc = async ({ query, limit }: SearchPostsInput): Promise<SearchPostsOutput> => {
   const normalizedQuery = query.toLowerCase().replace(/\s+/g, " ").trim();
 
   const matches: {
@@ -106,4 +111,4 @@ const searchPostsFunc = async (args: unknown) => {
   return { posts: data };
 };
 
-export const searchPosts = searchPostsServerDef.server(searchPostsFunc);
+export const searchPosts = searchPostsServerDef.server((args) => searchPostsFunc(args as SearchPostsInput));
