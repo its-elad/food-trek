@@ -10,8 +10,6 @@ const postEmbeddingSchema = new Schema(
   { versionKey: false }
 );
 
-postEmbeddingSchema.index({ postId: 1 });
-
 const PostEmbeddingModel = model("PostEmbedding", postEmbeddingSchema);
 
 export default PostEmbeddingModel;

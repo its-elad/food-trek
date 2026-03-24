@@ -46,6 +46,7 @@ const getHomeFeedPosts = async (req: AuthRequest, res: Response) => {
       console.warn("Error searching posts by semantic similarity:", error);
     }
   }
+  console.log("Falling back to regular home feed search & retrieval");
   try {
     const matchStage: PipelineStage = { $match: { userId: { $ne: req.user?._id } } };
     const sortingStages: PipelineStage[] = [];

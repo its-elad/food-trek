@@ -1,15 +1,20 @@
 import { env } from "../env.js";
-import { AnyBulkWriteOperation, Types } from "mongoose";
+import { AnyBulkWriteOperation, PipelineStage, Types } from "mongoose";
 import PostModel from "../models/post.model.js";
 import PostEmbeddingModel from "../models/postEmbedding.model.js";
 import { PostData } from "@food-trek/schemas";
 
-const SIMILARITY_THRESHOLD = 0.5;
+const SIMILARITY_THRESHOLD = 0.3;
 
 const BATCH_SIZE = 20;
 
 type EmbeddingResponse = {
   data?: Array<{ embedding: number[]; index: number }>;
+};
+
+type PostNeedingEmbeddingUpdate = {
+  _id: Types.ObjectId;
+  text: string;
 };
 
 const fetchEmbeddings = async (input: string | string[]): Promise<number[][]> => {
@@ -80,143 +85,77 @@ export const searchPostsBySemanticSimilarity = async (
   query: string,
   filterByUserId?: { userId: string; equals: boolean }
 ): Promise<(PostData & { similarity: number })[]> => {
-  try {
-    const queryEmbedding = await getTextEmbedding(query);
+  const queryEmbedding = await getTextEmbedding(query);
 
-    const postEmbeddings: { embedding: number[]; post: PostData }[] = await PostEmbeddingModel.aggregate([
-      {
-        $lookup: {
-          from: "posts",
-          localField: "postId",
-          foreignField: "_id",
-          as: "post",
-        },
+  const postEmbeddings: { embedding: number[]; post: PostData }[] = await PostEmbeddingModel.aggregate([
+    {
+      $lookup: {
+        from: "posts",
+        localField: "postId",
+        foreignField: "_id",
+        as: "post",
       },
-      {
-        $unwind: {
-          path: "$post",
-          preserveNullAndEmptyArrays: true,
-        },
+    },
+    {
+      $unwind: {
+        path: "$post",
+        preserveNullAndEmptyArrays: true,
       },
-      ...(filterByUserId
-        ? [{ $match: { "post.userId": { [filterByUserId.equals ? "$eq" : "$ne"]: filterByUserId.userId } } }]
-        : []),
-      {
-        $lookup: {
-          from: "users",
-          let: { postUserId: "$post.userId" },
-          pipeline: [
-            { $match: { $expr: { $eq: [{ $toString: "$_id" }, "$$postUserId"] } } },
-            { $project: { username: 1, imgUrl: 1 } },
-          ],
-          as: "post.userId",
-        },
+    },
+    ...(filterByUserId
+      ? [{ $match: { "post.userId": { [filterByUserId.equals ? "$eq" : "$ne"]: filterByUserId.userId } } }]
+      : []),
+    {
+      $lookup: {
+        from: "users",
+        let: { postUserId: "$post.userId" },
+        pipeline: [
+          { $match: { $expr: { $eq: [{ $toString: "$_id" }, "$$postUserId"] } } },
+          { $project: { username: 1, imgUrl: 1 } },
+        ],
+        as: "post.userId",
       },
-      { $unwind: { path: "$post.userId", preserveNullAndEmptyArrays: true } },
-      { $set: { "post.userId": { $ifNull: ["$post.userId", null] } } },
-      {
-        $project: {
-          _id: 0,
-          embedding: 1,
-          post: 1,
-        },
+    },
+    { $unwind: { path: "$post.userId", preserveNullAndEmptyArrays: true } },
+    { $set: { "post.userId": { $ifNull: ["$post.userId", null] } } },
+    {
+      $project: {
+        _id: 0,
+        embedding: 1,
+        post: 1,
       },
-    ]);
+    },
+  ]);
 
-    if (postEmbeddings.length === 0) {
-      return [];
-    }
-
-    const results = postEmbeddings
-      .map((embeddingDoc) => {
-        const similarity = cosineSimilarity(queryEmbedding, embeddingDoc.embedding);
-
-        return {
-          ...embeddingDoc.post,
-          similarity,
-        };
-      })
-      .filter((result) => result.similarity >= SIMILARITY_THRESHOLD)
-      .sort((a, b) => b.similarity - a.similarity);
-
-    return results;
-  } catch (error) {
-    console.error("Error searching posts by semantic similarity:", error);
-    throw error;
+  if (postEmbeddings.length === 0) {
+    return [];
   }
+
+  const results = postEmbeddings
+    .map((embeddingDoc) => {
+      const similarity = cosineSimilarity(queryEmbedding, embeddingDoc.embedding);
+
+      return {
+        ...embeddingDoc.post,
+        similarity,
+      };
+    })
+    .filter((result) => result.similarity >= SIMILARITY_THRESHOLD)
+    .sort((a, b) => b.similarity - a.similarity);
+
+  return results;
 };
 
-export const checkAndUpdatePostEmbedding = async (postId: string): Promise<boolean> => {
-  const postObjectId = new Types.ObjectId(postId);
-  try {
-    const result = await PostModel.aggregate<{
-      _id: string;
-      text: string;
-      shouldUpdate: boolean;
-    }>([
-      { $match: { _id: postObjectId } },
-      {
-        $lookup: {
-          from: "postembeddings",
-          localField: "_id",
-          foreignField: "postId",
-          as: "embedding",
-        },
-      },
-      { $unwind: { path: "$embedding", preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          _id: 1,
-          text: 1,
-          shouldUpdate: {
-            $cond: [
-              {
-                $or: [
-                  { $eq: ["$embedding", null] },
-                  { $ne: ["$embedding.embeddingModel", env.OPENROUTER_EMBEDDING_MODEL] },
-                  { $gt: ["$updatedAt", "$embedding.lastUpdated"] },
-                ],
-              },
-              true,
-              false,
-            ],
-          },
-        },
-      },
-    ]);
+const findPostsNeedingEmbeddingUpdate = async (
+  postMatch: PipelineStage.Match["$match"] = {}
+): Promise<PostNeedingEmbeddingUpdate[]> => {
+  const pipeline: PipelineStage[] = [];
 
-    if (result.length === 0) {
-      console.warn(`Post with ID ${postId} not found`);
-      return false;
-    }
-
-    const { text, shouldUpdate } = result[0]!;
-
-    if (!shouldUpdate) {
-      return false;
-    }
-
-    const embedding = await getTextEmbedding(text);
-
-    await PostEmbeddingModel.updateOne(
-      { postId: postObjectId },
-      {
-        embedding,
-        embeddingModel: env.OPENROUTER_EMBEDDING_MODEL,
-        lastUpdated: new Date(),
-      },
-      { upsert: true }
-    );
-
-    return true;
-  } catch (error) {
-    console.error(`Error checking/updating embedding for post ${postId}:`, error);
-    throw error;
+  if (Object.keys(postMatch).length > 0) {
+    pipeline.push({ $match: postMatch });
   }
-};
 
-export const updateAllPostEmbeddings = async (): Promise<{ updated: number; failed: number }> => {
-  const stalePosts = await PostModel.aggregate<{ _id: Types.ObjectId; text: string }>([
+  pipeline.push(
     {
       $lookup: {
         from: "postembeddings",
@@ -235,18 +174,24 @@ export const updateAllPostEmbeddings = async (): Promise<{ updated: number; fail
         ],
       },
     },
-    { $project: { _id: 1, text: 1 } },
-  ]);
+    { $project: { _id: 1, text: 1 } }
+  );
 
-  if (stalePosts.length === 0) return { updated: 0, failed: 0 };
+  return await PostModel.aggregate<PostNeedingEmbeddingUpdate>(pipeline);
+};
+
+const upsertPostEmbeddings = async (
+  posts: PostNeedingEmbeddingUpdate[],
+  options?: { throwOnBatchError?: boolean }
+): Promise<{ updated: number; failed: number }> => {
+  if (posts.length === 0) return { updated: 0, failed: 0 };
 
   let updated = 0;
   let failed = 0;
   const now = new Date();
 
-  // Process in batches — one API call per batch
-  for (let i = 0; i < stalePosts.length; i += BATCH_SIZE) {
-    const batch = stalePosts.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < posts.length; i += BATCH_SIZE) {
+    const batch = posts.slice(i, i + BATCH_SIZE);
 
     try {
       const embeddings = await fetchEmbeddings(batch.map((p) => p.text));
@@ -276,8 +221,39 @@ export const updateAllPostEmbeddings = async (): Promise<{ updated: number; fail
     } catch (error) {
       console.error(`Batch ${i / BATCH_SIZE + 1} has failed:`, error);
       failed += batch.length;
+
+      if (options?.throwOnBatchError) {
+        throw error;
+      }
     }
   }
 
+  console.log(`Embedding update completed: ${updated} updated, ${failed} failed`);
   return { updated, failed };
+};
+
+export const checkAndUpdatePostEmbedding = async (postId: string): Promise<boolean> => {
+  const postObjectId = new Types.ObjectId(postId);
+  try {
+    const stalePosts = await findPostsNeedingEmbeddingUpdate({ _id: postObjectId });
+
+    if (stalePosts.length === 0) {
+      const postExists = await PostModel.exists({ _id: postObjectId });
+      if (!postExists) {
+        console.warn(`Post with ID ${postId} not found`);
+      }
+      return false;
+    }
+
+    const result = await upsertPostEmbeddings(stalePosts, { throwOnBatchError: true });
+    return result.updated > 0;
+  } catch (error) {
+    console.error(`Error checking/updating embedding for post ${postId}:`, error);
+    throw error;
+  }
+};
+
+export const updateAllPostEmbeddings = async (): Promise<{ updated: number; failed: number }> => {
+  const stalePosts = await findPostsNeedingEmbeddingUpdate();
+  return upsertPostEmbeddings(stalePosts);
 };
