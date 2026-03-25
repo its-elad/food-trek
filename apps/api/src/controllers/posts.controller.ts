@@ -7,6 +7,7 @@ import LikeModel from "../models/like.model.js";
 import { PipelineStage } from "mongoose";
 import { checkAndUpdatePostEmbedding, searchPostsBySemanticSimilarity, updateAllPostEmbeddings } from "../tools/rag.js";
 import PostEmbeddingModel from "../models/postEmbedding.model.js";
+import { UpdateEmbeddingsRes } from "../common/schemas.js";
 
 const createPost = async (req: AuthRequest, res: Response) => {
   const parsedBody = newPostDataSchema.safeParse(req.body);
@@ -179,7 +180,7 @@ const updateAllEmbeddings = async (_req: AuthRequest, res: Response) => {
       message: "Batch update completed",
       updated: result.updated,
       failed: result.failed,
-    });
+    } satisfies UpdateEmbeddingsRes);
   } catch (error) {
     console.error("Error batch updating embeddings:", error);
     res.status(500).send("error batch updating embeddings");

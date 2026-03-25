@@ -5,14 +5,13 @@ import PostEmbeddingModel from "../models/postEmbedding.model.js";
 import { PostData } from "@food-trek/schemas";
 
 const SIMILARITY_THRESHOLD = 0.3;
-
-const BATCH_SIZE = 20;
+const EMBEDD_BATCH_SIZE = 20;
 
 type EmbeddingResponse = {
   data?: Array<{ embedding: number[]; index: number }>;
 };
 
-type PostNeedingEmbeddingUpdate = {
+type PostToUpdateEmbedding = {
   _id: Types.ObjectId;
   text: string;
 };
@@ -38,18 +37,6 @@ const fetchEmbeddings = async (input: string | string[]): Promise<number[][]> =>
   }
 
   return data.data.sort((a, b) => a.index - b.index).map((item) => item.embedding);
-};
-
-export const getTextEmbedding = async (text: string): Promise<number[]> => {
-  try {
-    const results = await fetchEmbeddings(text);
-    const embedding = results[0];
-    if (!embedding) throw new Error("Empty embedding returned");
-    return embedding;
-  } catch (error) {
-    console.error("Error fetching embedding from OpenRouter:", error);
-    throw error;
-  }
 };
 
 const cosineSimilarity = (vec1: number[], vec2: number[]): number => {
@@ -85,7 +72,10 @@ export const searchPostsBySemanticSimilarity = async (
   query: string,
   filterByUserId?: { userId: string; equals: boolean }
 ): Promise<(PostData & { similarity: number })[]> => {
-  const queryEmbedding = await getTextEmbedding(query);
+  const queryEmbedding = (await fetchEmbeddings(query))[0];
+  if (!queryEmbedding) {
+    throw new Error("An Empty Embedding was returned for the search query");
+  }
 
   const postEmbeddings: { embedding: number[]; post: PostData }[] = await PostEmbeddingModel.aggregate([
     {
@@ -148,7 +138,7 @@ export const searchPostsBySemanticSimilarity = async (
 
 const findPostsNeedingEmbeddingUpdate = async (
   postMatch: PipelineStage.Match["$match"] = {}
-): Promise<PostNeedingEmbeddingUpdate[]> => {
+): Promise<PostToUpdateEmbedding[]> => {
   const pipeline: PipelineStage[] = [];
 
   if (Object.keys(postMatch).length > 0) {
@@ -177,11 +167,11 @@ const findPostsNeedingEmbeddingUpdate = async (
     { $project: { _id: 1, text: 1 } }
   );
 
-  return await PostModel.aggregate<PostNeedingEmbeddingUpdate>(pipeline);
+  return await PostModel.aggregate<PostToUpdateEmbedding>(pipeline);
 };
 
 const upsertPostEmbeddings = async (
-  posts: PostNeedingEmbeddingUpdate[],
+  posts: PostToUpdateEmbedding[],
   options?: { throwOnBatchError?: boolean }
 ): Promise<{ updated: number; failed: number }> => {
   if (posts.length === 0) return { updated: 0, failed: 0 };
@@ -190,15 +180,15 @@ const upsertPostEmbeddings = async (
   let failed = 0;
   const now = new Date();
 
-  for (let i = 0; i < posts.length; i += BATCH_SIZE) {
-    const batch = posts.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < posts.length; i += EMBEDD_BATCH_SIZE) {
+    const batch = posts.slice(i, i + EMBEDD_BATCH_SIZE);
 
     try {
       const embeddings = await fetchEmbeddings(batch.map((p) => p.text));
 
       const bulkOps = batch.map((post, idx) => {
         const embedding = embeddings[idx];
-        if (!embedding) throw new Error(`Missing embedding at index ${idx}`);
+        if (!embedding) throw new Error(`Missing embedding at index ${idx} for post ${post._id}`);
         return {
           updateOne: {
             filter: { postId: post._id },
@@ -219,7 +209,7 @@ const upsertPostEmbeddings = async (
       updated += writeResult.modifiedCount + writeResult.upsertedCount;
       failed += writeResult.getWriteErrorCount();
     } catch (error) {
-      console.error(`Batch ${i / BATCH_SIZE + 1} has failed:`, error);
+      console.error(`Batch ${i / EMBEDD_BATCH_SIZE + 1} has failed:`, error);
       failed += batch.length;
 
       if (options?.throwOnBatchError) {

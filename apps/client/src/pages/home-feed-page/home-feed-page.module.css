@@ -39,13 +39,3 @@
   grid-area: addPostButton;
   padding: 2rem 0;
 }
-
-.noResults {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  font-size: 1.1rem;
-  color: #666;
-  width: 100%;
-}
