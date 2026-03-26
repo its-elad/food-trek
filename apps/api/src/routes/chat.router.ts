@@ -3,9 +3,10 @@ import { Readable } from "stream";
 import { showNotificationClientDef } from "@food-trek/schemas";
 import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { Router, Request, Response } from "express";
-import { getCurrentTime, searchPosts } from "../tools/tools.js";
+import { getCurrentTime, searchPosts } from "../ai/tools.js";
 import { env } from "../env.js";
 import { authenticate } from "../middleware/auth.middleware.js";
+import { openRouterProvider } from "../ai/provider.js";
 
 export const chatRouter = Router();
 chatRouter.use(authenticate);
@@ -28,7 +29,7 @@ chatRouter.post("/", async (req: Request, res: Response) => {
     const modelMessages = convertMessagesToModelMessages(messages);
 
     const chatStream = chat({
-      adapter: createOpenRouterText(env.OPENROUTER_MODEL, env.OPENROUTER_API_KEY),
+      adapter: openRouterProvider,
       messages: modelMessages as never,
       stream: true,
       conversationId,

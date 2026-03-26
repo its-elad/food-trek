@@ -15,6 +15,10 @@ export const getCurrentTimeServerDef = toolDefinition({
 
 const searchPostsInputSchema = z.object({
   query: z.string().min(2).max(120).describe("Free-text search phrase, e.g. 'spicy ramen in tokyo'"),
+  orderBy: z
+    .enum(["likes", "createdAt"])
+    .optional()
+    .describe("Optional sorting parameter extracted from the user query. Can be either 'likes' or 'createdAt'."),
   limit: z.number().int().min(1).max(10).default(5).describe("Maximum number of matching posts to return"),
 });
 export type SearchPostsInput = z.infer<typeof searchPostsInputSchema>;

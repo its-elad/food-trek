@@ -33,8 +33,6 @@ function JsonBlock({ label, data }: { label: string; data: unknown }) {
           display: "flex",
           alignItems: "center",
           gap: 0.5,
-          cursor: "pointer",
-          userSelect: "none",
         }}
       >
         {open ? <ExpandLessIcon sx={{ fontSize: 13 }} /> : <ExpandMoreIcon sx={{ fontSize: 13 }} />}
@@ -83,8 +81,6 @@ function ReasoningBlock({ content }: { content: string }) {
           display: "flex",
           alignItems: "center",
           gap: 0.5,
-          cursor: "pointer",
-          userSelect: "none",
         }}
       >
         <PsychologyIcon sx={{ fontSize: 14, color: "text.secondary" }} />
@@ -223,7 +219,7 @@ export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: 
       >
         {messages.length === 0 && (
           <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ mt: 3 }}>
-            Try: "What time is it?" or "Show me a warning notification"
+            Try: "What posts are there about Ramen?" or "What posts are there from Japan?"
           </Typography>
         )}
 

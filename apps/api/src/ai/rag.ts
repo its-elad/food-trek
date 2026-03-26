@@ -70,52 +70,67 @@ const cosineSimilarity = (vec1: number[], vec2: number[]): number => {
 
 export const searchPostsBySemanticSimilarity = async (
   query: string,
-  filterByUserId?: { userId: string; equals: boolean }
+  filterByUserId?: { userId: string; equals: boolean },
+  extraSortingBy?: "likes" | "createdAt"
 ): Promise<(PostData & { similarity: number })[]> => {
   const queryEmbedding = (await fetchEmbeddings(query))[0];
   if (!queryEmbedding) {
     throw new Error("An Empty Embedding was returned for the search query");
   }
 
-  const postEmbeddings: { embedding: number[]; post: PostData }[] = await PostEmbeddingModel.aggregate([
-    {
-      $lookup: {
-        from: "posts",
-        localField: "postId",
-        foreignField: "_id",
-        as: "post",
+  const postEmbeddings: { embedding: number[]; post: PostData & { likes: number } }[] =
+    await PostEmbeddingModel.aggregate([
+      {
+        $lookup: {
+          from: "posts",
+          localField: "postId",
+          foreignField: "_id",
+          as: "post",
+        },
       },
-    },
-    {
-      $unwind: {
-        path: "$post",
-        preserveNullAndEmptyArrays: true,
+      {
+        $unwind: {
+          path: "$post",
+          preserveNullAndEmptyArrays: true,
+        },
       },
-    },
-    ...(filterByUserId
-      ? [{ $match: { "post.userId": { [filterByUserId.equals ? "$eq" : "$ne"]: filterByUserId.userId } } }]
-      : []),
-    {
-      $lookup: {
-        from: "users",
-        let: { postUserId: "$post.userId" },
-        pipeline: [
-          { $match: { $expr: { $eq: [{ $toString: "$_id" }, "$$postUserId"] } } },
-          { $project: { username: 1, imgUrl: 1 } },
-        ],
-        as: "post.userId",
+      {
+        $lookup: {
+          from: "likes",
+          let: { postDocId: { $toString: "$post._id" } },
+          pipeline: [{ $match: { $expr: { $eq: ["$postId", "$$postDocId"] } } }],
+          as: "likesArr",
+        },
       },
-    },
-    { $unwind: { path: "$post.userId", preserveNullAndEmptyArrays: true } },
-    { $set: { "post.userId": { $ifNull: ["$post.userId", null] } } },
-    {
-      $project: {
-        _id: 0,
-        embedding: 1,
-        post: 1,
+      {
+        $addFields: {
+          "post.likes": { $size: "$likesArr" },
+        },
       },
-    },
-  ]);
+      ...(filterByUserId
+        ? [{ $match: { "post.userId": { [filterByUserId.equals ? "$eq" : "$ne"]: filterByUserId.userId } } }]
+        : []),
+      {
+        $lookup: {
+          from: "users",
+          let: { postUserId: "$post.userId" },
+          pipeline: [
+            { $match: { $expr: { $eq: [{ $toString: "$_id" }, "$$postUserId"] } } },
+            { $project: { username: 1, imgUrl: 1 } },
+          ],
+          as: "post.userId",
+        },
+      },
+      { $unwind: { path: "$post.userId", preserveNullAndEmptyArrays: true } },
+      { $set: { "post.userId": { $ifNull: ["$post.userId", null] } } },
+      {
+        $project: {
+          _id: 0,
+          embedding: 1,
+          post: 1,
+        },
+      },
+    ]);
 
   if (postEmbeddings.length === 0) {
     return [];
@@ -131,7 +146,20 @@ export const searchPostsBySemanticSimilarity = async (
       };
     })
     .filter((result) => result.similarity >= SIMILARITY_THRESHOLD)
-    .sort((a, b) => b.similarity - a.similarity);
+    .sort((a, b) => {
+      // Sort by similarity descending
+      if (b.similarity !== a.similarity) {
+        return b.similarity - a.similarity;
+      }
+      // If similarity is equal, sort by extraSortingBy
+      if (extraSortingBy === "likes") {
+        return (b.likes || 0) - (a.likes || 0);
+      }
+      if (extraSortingBy === "createdAt") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return 0;
+    });
 
   return results;
 };

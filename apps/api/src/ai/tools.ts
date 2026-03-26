@@ -22,10 +22,10 @@ export const getCurrentTime = getCurrentTimeServerDef.server(async () => {
   };
 });
 
-const searchPostsFunc = async ({ query, limit }: SearchPostsInput): Promise<SearchPostsOutput> => {
+const searchPostsFunc = async ({ query, limit, orderBy }: SearchPostsInput): Promise<SearchPostsOutput> => {
   const normalizedQuery = query.toLowerCase().replace(/\s+/g, " ").trim();
 
-  const data = encode((await searchPostsBySemanticSimilarity(normalizedQuery)).slice(0, limit));
+  const data = encode((await searchPostsBySemanticSimilarity(normalizedQuery, undefined, orderBy)).slice(0, limit));
   return { posts: data };
 };
 
