@@ -214,7 +214,7 @@ export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: 
           display: "flex",
           flexDirection: "column",
           gap: 1.5,
-          bgcolor: "background.default",
+          backgroundColor: "#fdfdfd",
         }}
       >
         {messages.length === 0 && (
@@ -303,7 +303,7 @@ export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: 
       </Paper>
 
       {/* Input */}
-      <Box component="form" onSubmit={handleSubmit}>
+      <Box component="form" onSubmit={handleSubmit} sx={{ backgroundColor: "#fdfdfd" }}>
         <TextField
           fullWidth
           value={input}
