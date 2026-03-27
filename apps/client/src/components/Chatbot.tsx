@@ -23,7 +23,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 
-function JsonBlock({ label, data }: { label: string; data: unknown }) {
+const JsonBlock = ({ label, data }: { label: string; data: unknown }) => {
   const [open, setOpen] = useState(false);
   return (
     <Box sx={{ mt: 0.5 }}>
@@ -59,9 +59,9 @@ function JsonBlock({ label, data }: { label: string; data: unknown }) {
       </Collapse>
     </Box>
   );
-}
+};
 
-function ReasoningBlock({ content }: { content: string }) {
+const ReasoningBlock = ({ content }: { content: string }) => {
   const [open, setOpen] = useState(false);
   return (
     <Box
@@ -111,9 +111,13 @@ function ReasoningBlock({ content }: { content: string }) {
       </Collapse>
     </Box>
   );
-}
+};
 
-function ToolCallPart<T extends AnyClientTool[]>({ part }: { part: Extract<MessagePart<T>, { type: "tool-call" }> }) {
+const ToolCallPart = <T extends AnyClientTool[]>({
+  part,
+}: {
+  part: Extract<MessagePart<T>, { type: "tool-call" }>;
+}) => {
   const isRunning = ["awaiting-input", "input-streaming", "input-complete"].includes(part.state);
   const isError = (part.state as never) === "error";
   const isSuccess = ["output-complete", "output-streaming"].includes(part.state);
@@ -164,9 +168,9 @@ function ToolCallPart<T extends AnyClientTool[]>({ part }: { part: Extract<Messa
       )}
     </Box>
   );
-}
+};
 
-export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: T }) {
+export const ChatBot = <T extends AnyClientTool[]>({ tools }: { tools?: T }) => {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -329,4 +333,4 @@ export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: 
       </Box>
     </Box>
   );
-}
+};
