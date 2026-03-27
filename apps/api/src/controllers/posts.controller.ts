@@ -9,8 +9,6 @@ import { checkAndUpdatePostEmbedding, searchPostsBySemanticSimilarity, updateAll
 import PostEmbeddingModel from "../models/postEmbedding.model.js";
 import { UpdateEmbeddingsRes } from "../common/schemas.js";
 import { chat } from "@tanstack/ai/adapters";
-import { createOpenRouterText } from "@tanstack/ai-openrouter";
-import { env } from "../env.js";
 import z from "zod";
 import { openRouterProvider } from "../ai/provider.js";
 

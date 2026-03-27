@@ -1,10 +1,8 @@
 import { chat, convertMessagesToModelMessages, toServerSentEventsStream } from "@tanstack/ai";
 import { Readable } from "stream";
 import { showNotificationClientDef } from "@food-trek/schemas";
-import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { Router, Request, Response } from "express";
 import { getCurrentTime, searchPosts } from "../ai/tools.js";
-import { env } from "../env.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 import { openRouterProvider } from "../ai/provider.js";
 
