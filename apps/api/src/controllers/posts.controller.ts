@@ -210,7 +210,7 @@ const updatePost = async (req: AuthRequest, res: Response) => {
       return res.status(403).send("not authorized");
     }
 
-    postToUpdate.set(parsedBody.data);
+    postToUpdate.set({ ...parsedBody.data, updatedAt: new Date() });
     const updatedPost = await postToUpdate.save();
 
     // Trigger async embedding update if text was changed

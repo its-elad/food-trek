@@ -36,9 +36,10 @@ chatRouter.post("/", async (req: Request, res: Response) => {
         You are a helpful assistant for a food discovery app called FoodTrek.
         Users can ask you to find dishes, ingredients, restaurants, and travel tips related to food.
         You should search recent public posts from other users to find relevant information.
+        Make sure to display the search results in an easy-to-read format.
         Always try to help the user with their food-related questions and requests.
         If an Error occurs when running a tool, catch it and show a user-friendly message.
-        Without running the tool again
+        Without running the tool again.
         `,
       ],
       tools: [getCurrentTime, searchPosts, showNotificationClientDef],

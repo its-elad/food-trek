@@ -122,6 +122,13 @@ const ToolCallPart = <T extends AnyClientTool[]>({
   const isError = (part.state as never) === "error";
   const isSuccess = ["output-complete", "output-streaming"].includes(part.state);
 
+  let partInput: unknown = part.input ?? part.arguments;
+  if (typeof partInput === "string") {
+    try {
+      partInput = JSON.parse(partInput);
+    } catch {}
+  }
+
   return (
     <Box
       sx={{
@@ -159,7 +166,7 @@ const ToolCallPart = <T extends AnyClientTool[]>({
           )}
         </Box>
       </Box>
-      {part.input && Object.keys(part.input).length > 0 && <JsonBlock label="Input" data={part.input} />}
+      {partInput && <JsonBlock label="Input" data={partInput} />}
       {part.output !== undefined && <JsonBlock label="Output" data={part.output} />}
       {isError && (part as any).error && (
         <Typography variant="caption" color="error.light" sx={{ mt: 0.5, display: "block" }}>

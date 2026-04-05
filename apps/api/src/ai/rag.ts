@@ -187,7 +187,7 @@ const findPostsNeedingEmbeddingUpdate = async (
       $match: {
         $or: [
           { embedding: null },
-          { $expr: { $gt: ["$updatedAt", "$embedding.lastUpdated"] } },
+          { $expr: { $gt: ["$updatedAt", "$embedding.updatedAt"] } },
           { "embedding.embeddingModel": { $ne: env.OPENROUTER_EMBEDDING_MODEL } },
         ],
       },
@@ -225,7 +225,7 @@ const upsertPostEmbeddings = async (
                 postId: post._id,
                 embedding,
                 embeddingModel: env.OPENROUTER_EMBEDDING_MODEL,
-                lastUpdated: now,
+                updatedAt: now,
               },
             },
             upsert: true,
@@ -259,6 +259,8 @@ export const checkAndUpdatePostEmbedding = async (postId: string): Promise<boole
       const postExists = await PostModel.exists({ _id: postObjectId });
       if (!postExists) {
         console.warn(`Post with ID ${postId} not found`);
+      } else {
+        console.warn(`Embedding for post ${postId} is already up to date`);
       }
       return false;
     }

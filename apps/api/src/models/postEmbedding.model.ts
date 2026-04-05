@@ -5,7 +5,7 @@ const postEmbeddingSchema = new Schema(
     postId: { type: Schema.Types.ObjectId, ref: "Post", required: true, unique: true, index: true },
     embedding: { type: [Number], required: true },
     embeddingModel: { type: String, required: true },
-    lastUpdated: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
   },
   { versionKey: false }
 );
