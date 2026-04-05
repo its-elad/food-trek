@@ -12,4 +12,7 @@ router.get("/user-page", postsController.getLoggedInUserPosts);
 router.patch("/:postId", postsController.updatePost);
 router.delete("/:postId", postsController.deletePost);
 
+// RAG embedding routes
+router.post("/embedding-batch/update-all", postsController.updateAllEmbeddings);
+
 export default router;

@@ -6,9 +6,13 @@ const postSchema = new Schema(
     imageUrl: { type: String, required: true },
     text: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
   },
   { versionKey: false }
 );
+
+postSchema.index({ text: "text" });
+postSchema.index({ createdAt: -1 });
 
 const PostModel = model("Post", postSchema);
 

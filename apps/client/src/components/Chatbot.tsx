@@ -23,7 +23,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 
-function JsonBlock({ label, data }: { label: string; data: unknown }) {
+const JsonBlock = ({ label, data }: { label: string; data: unknown }) => {
   const [open, setOpen] = useState(false);
   return (
     <Box sx={{ mt: 0.5 }}>
@@ -33,8 +33,6 @@ function JsonBlock({ label, data }: { label: string; data: unknown }) {
           display: "flex",
           alignItems: "center",
           gap: 0.5,
-          cursor: "pointer",
-          userSelect: "none",
         }}
       >
         {open ? <ExpandLessIcon sx={{ fontSize: 13 }} /> : <ExpandMoreIcon sx={{ fontSize: 13 }} />}
@@ -61,9 +59,9 @@ function JsonBlock({ label, data }: { label: string; data: unknown }) {
       </Collapse>
     </Box>
   );
-}
+};
 
-function ReasoningBlock({ content }: { content: string }) {
+const ReasoningBlock = ({ content }: { content: string }) => {
   const [open, setOpen] = useState(false);
   return (
     <Box
@@ -83,8 +81,6 @@ function ReasoningBlock({ content }: { content: string }) {
           display: "flex",
           alignItems: "center",
           gap: 0.5,
-          cursor: "pointer",
-          userSelect: "none",
         }}
       >
         <PsychologyIcon sx={{ fontSize: 14, color: "text.secondary" }} />
@@ -115,12 +111,23 @@ function ReasoningBlock({ content }: { content: string }) {
       </Collapse>
     </Box>
   );
-}
+};
 
-function ToolCallPart<T extends AnyClientTool[]>({ part }: { part: Extract<MessagePart<T>, { type: "tool-call" }> }) {
+const ToolCallPart = <T extends AnyClientTool[]>({
+  part,
+}: {
+  part: Extract<MessagePart<T>, { type: "tool-call" }>;
+}) => {
   const isRunning = ["awaiting-input", "input-streaming", "input-complete"].includes(part.state);
   const isError = (part.state as never) === "error";
   const isSuccess = ["output-complete", "output-streaming"].includes(part.state);
+
+  let partInput: unknown = part.input ?? part.arguments;
+  if (typeof partInput === "string") {
+    try {
+      partInput = JSON.parse(partInput);
+    } catch {}
+  }
 
   return (
     <Box
@@ -159,7 +166,7 @@ function ToolCallPart<T extends AnyClientTool[]>({ part }: { part: Extract<Messa
           )}
         </Box>
       </Box>
-      {part.input && Object.keys(part.input).length > 0 && <JsonBlock label="Input" data={part.input} />}
+      {partInput && <JsonBlock label="Input" data={partInput} />}
       {part.output !== undefined && <JsonBlock label="Output" data={part.output} />}
       {isError && (part as any).error && (
         <Typography variant="caption" color="error.light" sx={{ mt: 0.5, display: "block" }}>
@@ -168,16 +175,16 @@ function ToolCallPart<T extends AnyClientTool[]>({ part }: { part: Extract<Messa
       )}
     </Box>
   );
-}
+};
 
-export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: T }) {
+export const ChatBot = <T extends AnyClientTool[]>({ tools }: { tools?: T }) => {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const chatOptions = useMemo(
     () =>
       createChatClientOptions({
-        connection: fetchServerSentEvents(`${import.meta.env.VITE_API_URL}/chat`),
+        connection: fetchServerSentEvents(`${import.meta.env.VITE_API_URL}/chat`, { credentials: "include" }),
         tools: tools ? clientTools(...tools) : undefined,
       }),
     [tools]
@@ -218,12 +225,12 @@ export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: 
           display: "flex",
           flexDirection: "column",
           gap: 1.5,
-          bgcolor: "background.default",
+          backgroundColor: "#fdfdfd",
         }}
       >
         {messages.length === 0 && (
           <Typography variant="caption" color="text.secondary" textAlign="center" sx={{ mt: 3 }}>
-            Try: "What time is it?" or "Show me a warning notification"
+            Try: "What posts are there about Ramen?" or "What posts are there from Japan?"
           </Typography>
         )}
 
@@ -307,7 +314,7 @@ export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: 
       </Paper>
 
       {/* Input */}
-      <Box component="form" onSubmit={handleSubmit}>
+      <Box component="form" onSubmit={handleSubmit} sx={{ backgroundColor: "#fdfdfd" }}>
         <TextField
           fullWidth
           value={input}
@@ -333,4 +340,4 @@ export default function ChatBot<T extends AnyClientTool[]>({ tools }: { tools?: 
       </Box>
     </Box>
   );
-}
+};

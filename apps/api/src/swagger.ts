@@ -18,6 +18,7 @@ import {
   likesCountSchema,
   likeDataSchema,
 } from "@food-trek/schemas";
+import { updateEmbeddingsResSchema } from "./common/schemas.js";
 
 const AuthTag = "Auth";
 const FilesTag = "Files";
@@ -228,6 +229,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         post: {
           tags: [PostsTag],
           summary: "Create a new post",
+          security: [{ cookieAuth: [] }],
           requestBody: {
             required: true,
             content: { "application/json": { schema: newPostDataSchema } },
@@ -257,6 +259,8 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         get: {
           tags: [PostsTag],
           summary: "Get home feed posts",
+          security: [{ cookieAuth: [] }],
+          parameters: [{ name: "search", in: "query", required: false, schema: { type: "string" } }],
           responses: {
             200: {
               description: "Posts retrieved successfully",
@@ -274,6 +278,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         get: {
           tags: [PostsTag],
           summary: "Get user page posts",
+          security: [{ cookieAuth: [] }],
           responses: {
             200: {
               description: "Posts retrieved successfully",
@@ -287,10 +292,30 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         },
       },
 
+      "/api/posts/embedding-batch/update-all": {
+        post: {
+          tags: [PostsTag],
+          summary: "Batch update embeddings for all stale or missing posts",
+          security: [{ cookieAuth: [] }],
+          responses: {
+            200: {
+              description: "Batch update completed",
+              content: {
+                "application/json": {
+                  schema: updateEmbeddingsResSchema,
+                },
+              },
+            },
+            ...INTERNAL_SERVER_ERROR_RESPONSE,
+          },
+        },
+      },
+
       "/api/posts/{postId}": {
         patch: {
           tags: [PostsTag],
           summary: "Update an existing post",
+          security: [{ cookieAuth: [] }],
           parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
           requestBody: {
             required: true,
@@ -328,6 +353,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         delete: {
           tags: [PostsTag],
           summary: "Delete an existing post",
+          security: [{ cookieAuth: [] }],
           parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
           responses: {
             200: {
@@ -366,6 +392,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         post: {
           tags: [CommentsTag],
           summary: "Add a new comment",
+          security: [{ cookieAuth: [] }],
           requestBody: {
             required: true,
             content: { "application/json": { schema: newCommentDataSchema } },
@@ -399,6 +426,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         get: {
           tags: [CommentsTag],
           summary: "Get comment count of a specific post",
+          security: [{ cookieAuth: [] }],
           parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
           responses: {
             200: {
@@ -425,6 +453,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         get: {
           tags: [CommentsTag],
           summary: "Get comments of a specific post",
+          security: [{ cookieAuth: [] }],
           parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
           responses: {
             200: {
@@ -451,6 +480,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         post: {
           tags: [LikesTag],
           summary: "Add a new like",
+          security: [{ cookieAuth: [] }],
           requestBody: {
             required: true,
             content: { "application/json": { schema: newLikeDataSchema } },
@@ -484,6 +514,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         get: {
           tags: [LikesTag],
           summary: "Get the logged-in user's like on a specific post",
+          security: [{ cookieAuth: [] }],
           parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
           responses: {
             200: {
@@ -510,6 +541,7 @@ export function generateOpenAPIDocument(serverUrl: string): ReturnType<typeof cr
         get: {
           tags: [LikesTag],
           summary: "Get like count of a specific post",
+          security: [{ cookieAuth: [] }],
           parameters: [{ name: "postId", in: "path", required: true, schema: { type: "string" } }],
           responses: {
             200: {

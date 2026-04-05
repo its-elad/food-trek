@@ -1,5 +1,5 @@
 import { Box, Snackbar, Alert } from "@mui/material";
-import ChatBot from "../../components/Chatbot";
+import { ChatBot } from "../../components/Chatbot";
 import { useState } from "react";
 import { showNotificationClientDef, type ShowNotificationInput } from "@food-trek/schemas";
 import styles from "./chat-page.module.css";

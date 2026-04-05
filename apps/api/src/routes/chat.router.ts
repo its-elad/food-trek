@@ -1,12 +1,13 @@
 import { chat, convertMessagesToModelMessages, toServerSentEventsStream } from "@tanstack/ai";
 import { Readable } from "stream";
 import { showNotificationClientDef } from "@food-trek/schemas";
-import { createOpenRouterText } from "@tanstack/ai-openrouter";
 import { Router, Request, Response } from "express";
-import { getCurrentTime } from "../tools/tools.js";
-import { env } from "../env.js";
+import { getCurrentTime, searchPosts } from "../ai/tools.js";
+import { authenticate } from "../middleware/auth.middleware.js";
+import { openRouterProvider } from "../ai/provider.js";
 
 export const chatRouter = Router();
+chatRouter.use(authenticate);
 
 chatRouter.post("/", async (req: Request, res: Response) => {
   const { messages, data } = req.body;
@@ -26,11 +27,22 @@ chatRouter.post("/", async (req: Request, res: Response) => {
     const modelMessages = convertMessagesToModelMessages(messages);
 
     const chatStream = chat({
-      adapter: createOpenRouterText(env.OPENROUTER_MODEL, env.OPENROUTER_API_KEY),
+      adapter: openRouterProvider,
       messages: modelMessages as never,
       stream: true,
       conversationId,
-      tools: [getCurrentTime, showNotificationClientDef],
+      systemPrompts: [
+        `
+        You are a helpful assistant for a food discovery app called FoodTrek.
+        Users can ask you to find dishes, ingredients, restaurants, and travel tips related to food.
+        You should search recent public posts from other users to find relevant information.
+        Make sure to display the search results in an easy-to-read format.
+        Always try to help the user with their food-related questions and requests.
+        If an Error occurs when running a tool, catch it and show a user-friendly message.
+        Without running the tool again.
+        `,
+      ],
+      tools: [getCurrentTime, searchPosts, showNotificationClientDef],
     });
 
     const sseStream = toServerSentEventsStream(chatStream);

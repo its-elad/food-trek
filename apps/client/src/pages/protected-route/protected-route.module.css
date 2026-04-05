@@ -9,7 +9,7 @@
 .screenContainer {
   display: grid;
   grid-template-areas: "navbar pageContainer";
-  grid-template-columns: 115px auto;
+  grid-template-columns: 150px auto;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
