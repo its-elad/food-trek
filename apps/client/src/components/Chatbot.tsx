@@ -126,7 +126,9 @@ const ToolCallPart = <T extends AnyClientTool[]>({
   if (typeof partInput === "string") {
     try {
       partInput = JSON.parse(partInput);
-    } catch {}
+    } catch {
+      /* empty */
+    }
   }
 
   return (
